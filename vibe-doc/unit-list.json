@@ -1,0 +1,165 @@
+{
+  "units": {
+    "Tier0": {
+      "PeasantSpear": {
+        "atk": 2,
+        "def": 1,
+        "cost": { "Food": 10 },
+        "special": null,
+        "building": "Barracks Lv.1"
+      }
+    },
+    "Tier1": {
+      "Footman": {
+        "atk": 5,
+        "def": 4,
+        "cost": { "Food": 15, "Iron": 5 },
+        "special": null,
+        "building": "Barracks Lv.1"
+      },
+      "Hunter": {
+        "atk": 6,
+        "def": 2,
+        "cost": { "Food": 12, "Timber": 8 },
+        "special": "+25% vs Monsters",
+        "building": "Archery Range Lv.1"
+      },
+      "Scout": {
+        "atk": 3,
+        "def": 2,
+        "cost": { "Food": 20, "Gold": 10 },
+        "special": "First-Strike (ignore 50% enemy DEF on first round)",
+        "building": "Stable Lv.1"
+      }
+    },
+    "Tier2": {
+      "Swordsman": {
+        "atk": 8,
+        "def": 6,
+        "cost": { "Food": 25, "Iron": 10 },
+        "special": "Shield-Wall (+1 DEF per 5 Swordsmen)",
+        "building": "Barracks Lv.2"
+      },
+      "Longbowman": {
+        "atk": 10,
+        "def": 3,
+        "cost": { "Food": 18, "Timber": 12 },
+        "special": "Pierce (ignore 25% DEF)",
+        "building": "Archery Range Lv.2"
+      },
+      "LightCavalry": {
+        "atk": 7,
+        "def": 5,
+        "cost": { "Food": 30, "Gold": 15 },
+        "special": "Flank (extra ATK if enemy has no cavalry)",
+        "building": "Stable Lv.2"
+      },
+      "Catapult": {
+        "atk": 12,
+        "def": 2,
+        "cost": { "Food": 40, "Stone": 25, "Iron": 20 },
+        "special": "Siege (double damage vs Castle territories)",
+        "building": "Siege Workshop Lv.1"
+      }
+    },
+    "Tier3": {
+      "Knight": {
+        "atk": 15,
+        "def": 12,
+        "cost": { "Food": 50, "Iron": 30, "Gold": 20 },
+        "special": "Charge (first attack ignores 50% DEF)",
+        "building": "Stable Lv.3"
+      },
+      "Arbalester": {
+        "atk": 14,
+        "def": 5,
+        "cost": { "Food": 35, "Iron": 15, "Timber": 20 },
+        "special": "Armor-Piercing (25% chance to bypass DEF)",
+        "building": "Archery Range Lv.3"
+      },
+      "Pikeman": {
+        "atk": 10,
+        "def": 15,
+        "cost": { "Food": 30, "Iron": 25 },
+        "special": "Anti-Cavalry (x1.5 ATK vs mounted)",
+        "building": "Barracks Lv.3"
+      },
+      "Trebuchet": {
+        "atk": 18,
+        "def": 4,
+        "cost": { "Food": 60, "Stone": 40, "Iron": 30 },
+        "special": "Devastate (each hit permanently reduces enemy DEF by 1)",
+        "building": "Siege Workshop Lv.2"
+      }
+    },
+    "Tier4": {
+      "Paladin": {
+        "atk": 20,
+        "def": 18,
+        "cost": { "Food": 100, "Iron": 60, "Faith": 50 },
+        "special": "Holy Aura (+10% ATK/DEF to all human units)",
+        "source": "Temple"
+      },
+      "ForestWarden": {
+        "atk": 18,
+        "def": 12,
+        "cost": { "Food": 80, "Timber": 40, "Pelts": 30 },
+        "special": "Guerrilla (+50% ATK on Forest territories)",
+        "source": "Deepwood Village"
+      },
+      "DwarvenCannoneer": {
+        "atk": 22,
+        "def": 8,
+        "cost": { "Iron": 120, "Stone": 60, "Gold": 50 },
+        "special": "Explosive Shell (20% chance for 2× damage)",
+        "source": "Mountain Hold"
+      },
+      "VampireLord": {
+        "atk": 25,
+        "def": 15,
+        "cost": { "Food": 100, "Iron": 80, "Faith": 30 },
+        "special": "Life-Drain (heal 25% of damage dealt)",
+        "source": "Haunted Castle"
+      },
+      "SandStriker": {
+        "atk": 16,
+        "def": 10,
+        "cost": { "Food": 70, "Gold": 35 },
+        "special": "Sandstorm (–3 enemy ATK)",
+        "source": "Desert Outpost"
+      }
+    },
+    "Siege": {
+      "BatteringRam": {
+        "atk": 8,
+        "def": 12,
+        "cost": { "Timber": 50, "Iron": 30 },
+        "special": "+100% vs Gates",
+        "building": "Siege Workshop Lv.1"
+      },
+      "SiegeTower": {
+        "atk": 6,
+        "def": 20,
+        "cost": { "Timber": 40, "Stone": 50 },
+        "special": "Wall Bypass (ignore 30% DEF)",
+        "building": "Siege Workshop Lv.2"
+      },
+      "Bombard": {
+        "atk": 25,
+        "def": 6,
+        "cost": { "Iron": 100, "Stone": 80 },
+        "special": "Splash (damage adjacent enemy stacks)",
+        "building": "Siege Workshop Lv.3"
+      }
+    }
+  },
+  "upkeep": {
+    "formula": "1 Food per minute per tier",
+    "caps": {
+      "infantry": "+5 per Barracks level",
+      "ranged": "+5 per Archery Range level",
+      "cavalry": "+5 per Stable level",
+      "siege": "global cap tied to Siege Workshop level"
+    }
+  }
+}
