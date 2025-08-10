@@ -1,0 +1,44 @@
+{
+  "LumberCamp": {
+    "name": "Lumber Camp",
+    "description": "Produces Timber.",
+    "levels": {
+      "1": {
+        "cost": {
+          "Timber": 50,
+          "Stone": 30
+        },
+        "production": {
+          "Timber": 5
+        },
+        "storage_bonus": {
+          "Timber": 200
+        }
+      },
+      "2": {
+        "cost": {
+          "Timber": 100,
+          "Stone": 60
+        },
+        "production": {
+          "Timber": 6
+        },
+        "storage_bonus": {
+          "Timber": 250
+        }
+      },
+      "3": {
+        "cost": {
+          "Timber": 200,
+          "Stone": 120
+        },
+        "production": {
+          "Timber": 7.2
+        },
+        "storage_bonus": {
+          "Timber": 300
+        }
+      }
+    }
+  }
+}
