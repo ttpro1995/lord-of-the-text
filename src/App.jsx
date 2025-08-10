@@ -36,11 +36,11 @@ export function gameReducer(state, action) {
       const newTimber = Math.min(TIMBER_CAP, state.resources.timber + timberProduction);
       const newStone = state.resources.stone + stoneProduction;
 
-      // Debug log for resource changes
-      console.log('Resource update:', {
-        timber: newTimber,
-        stone: newStone
-      });
+      // Resource changes are now logged at the dispatch level
+      
+      
+      
+      
 
       return {
         ...state,
@@ -100,7 +100,9 @@ function App() {
   // Game tick
   useEffect(() => {
     const interval = setInterval(() => {
-      dispatch({ type: 'TICK' });
+      const action = { type: 'TICK' };
+      console.log('Resource update:', gameReducer(state, action).resources);
+      dispatch(action);
     }, 1000);
     return () => clearInterval(interval);
   }, []);
