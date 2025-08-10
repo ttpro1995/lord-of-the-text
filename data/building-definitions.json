@@ -2,29 +2,29 @@
   "Lumber-Camp": {
     "1": {
       "cost": {
-        "Timber": 50,
-        "Stone": 30
+        "timber": 50,
+        "stone": 30
       },
       "production": {
-        "Timber": 5
+        "timber": 5
       }
     },
     "2": {
       "cost": {
-        "Timber": 100,
-        "Stone": 60
+        "timber": 100,
+        "stone": 60
       },
       "production": {
-        "Timber": 12
+        "timber": 12
       }
     },
     "3": {
       "cost": {
-        "Timber": 200,
-        "Stone": 120
+        "timber": 200,
+        "stone": 120
       },
       "production": {
-        "Timber": 28
+        "timber": 28
       }
     }
   }

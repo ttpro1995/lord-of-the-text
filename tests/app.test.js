@@ -3,8 +3,8 @@ import { gameReducer, initialState } from '../src/App.jsx';
 import buildingDefinitions from '../data/building-definitions.json';
 
 describe('Milestone 1 - Timber Resource System', () => {
-  it('should start with 0 timber', () => {
-    expect(initialState.resources.timber).toBe(0);
+  it('should start with 60 timber', () => {
+    expect(initialState.resources.timber).toBe(60);
   });
 
   it('should produce 1 timber per tick by default', () => {

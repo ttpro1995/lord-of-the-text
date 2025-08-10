@@ -6,8 +6,8 @@ import buildingDefinitions from '../data/building-definitions.json';
 export const initialState = {
   playerName: "Lord",
   resources: {
-    timber: 0,
-    stone: 0,
+    timber: 60,
+    stone: 60,
     iron: 0,
     food: 0,
     gold: 0,
@@ -29,7 +29,7 @@ export function gameReducer(state, action) {
       let stoneProduction = 1; // Base production for stone
       const lumberCampLevel = state.buildings["Lumber-Camp"];
       if (lumberCampLevel > 0) {
-        const productionPerMinute = buildingDefinitions["Lumber-Camp"][lumberCampLevel].production.Timber;
+        const productionPerMinute = buildingDefinitions["Lumber-Camp"][lumberCampLevel].production.timber;
         timberProduction += productionPerMinute / 60;
       }
 
@@ -62,13 +62,15 @@ export function gameReducer(state, action) {
 
       const costs = definition.cost;
       const canAfford = Object.entries(costs).every(
-        ([resource, cost]) => state.resources[resource] >= cost
+        ([resource, cost]) => state.resources[resource.toLowerCase()] >= cost
       );
 
       if (canAfford) {
+        console.log(`Deducting resources for ${buildingName} level ${nextLevel}:`, costs);
         const newResources = { ...state.resources };
         Object.entries(costs).forEach(([resource, cost]) => {
-          newResources[resource] -= cost;
+          const resourceKey = resource.toLowerCase();
+          newResources[resourceKey] -= cost;
         });
 
         return {
@@ -79,6 +81,9 @@ export function gameReducer(state, action) {
             [buildingName]: nextLevel,
           },
         };
+      }
+      if (!canAfford) {
+        console.log(`Cannot afford to build ${buildingName} level ${nextLevel}`);
       }
       return state;
     }
