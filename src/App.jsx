@@ -16,7 +16,8 @@ export const initialState = {
   buildings: {
     "Lumber-Camp": 0
   },
-  version: "v0.2"
+  version: "v0.2",
+  _hasLogged: false
 };
 
 export const TIMBER_CAP = 200;
@@ -101,7 +102,6 @@ function App() {
   useEffect(() => {
     const interval = setInterval(() => {
       const action = { type: 'TICK' };
-      console.log('Resource update:', gameReducer(state, action).resources);
       dispatch(action);
     }, 1000);
     return () => clearInterval(interval);
