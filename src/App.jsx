@@ -6,8 +6,8 @@ import buildingDefinitions from '../data/building-definitions.json';
 const initialState = {
   playerName: "Lord",
   resources: {
-    timber: 0,
-    stone: 0,
+    timber: 50,
+    stone: 30,
     iron: 0,
     food: 0,
     gold: 0,
