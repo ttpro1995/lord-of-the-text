@@ -3,7 +3,7 @@ import './App.css';
 import buildingDefinitions from '../data/building-definitions.json';
 
 // Initial state
-const initialState = {
+export const initialState = {
   playerName: "Lord",
   resources: {
     timber: 0,
@@ -19,10 +19,10 @@ const initialState = {
   version: "v0.2"
 };
 
-const TIMBER_CAP = 200;
+export const TIMBER_CAP = 200;
 
 // Reducer function
-function gameReducer(state, action) {
+export function gameReducer(state, action) {
   switch (action.type) {
     case 'TICK': {
       let timberProduction = 1; // Base production
