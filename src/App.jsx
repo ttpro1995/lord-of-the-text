@@ -8,16 +8,15 @@ export const initialState = {
   resources: {
     timber: 60,
     stone: 60,
-    iron: 0,
-    food: 0,
-    gold: 0,
-    knowledge: 0
+    iron: 10,
+    food: 10,
+    gold: 10,
+    knowledge: 10
   },
   buildings: {
     "Lumber-Camp": 0
   },
-  version: "v0.2",
-  _hasLogged: false
+  version: "v0.2"
 };
 
 export const TIMBER_CAP = 200;
@@ -26,7 +25,7 @@ export const TIMBER_CAP = 200;
 export function gameReducer(state, action) {
   switch (action.type) {
     case 'TICK': {
-      let timberProduction = 1; // Base production
+      let timberProduction = 2; // Base production
       let stoneProduction = 1; // Base production for stone
       const lumberCampLevel = state.buildings["Lumber-Camp"];
       if (lumberCampLevel > 0) {
@@ -36,12 +35,6 @@ export function gameReducer(state, action) {
 
       const newTimber = Math.min(TIMBER_CAP, state.resources.timber + timberProduction);
       const newStone = state.resources.stone + stoneProduction;
-
-      // Resource changes are now logged at the dispatch level
-      
-      
-      
-      
 
       return {
         ...state,
@@ -113,9 +106,10 @@ function App() {
   // Autosave
   useEffect(() => {
     const interval = setInterval(() => {
+      console.log("Game state before autosaved:", state);
       localStorage.setItem('gameState', JSON.stringify(state));
       console.log("Game state autosaved:", state);
-    }, 10000);
+    }, 900);
     return () => clearInterval(interval);
   }, [state]);
 
