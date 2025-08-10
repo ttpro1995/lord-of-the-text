@@ -96,7 +96,10 @@ export function gameReducer(state, action) {
 }
 
 function App() {
-  const [state, dispatch] = useReducer(gameReducer, initialState);
+  // Try to load saved state from localStorage, or use initialState if none exists
+  const savedState = localStorage.getItem('gameState');
+  const initialGameState = savedState ? JSON.parse(savedState) : initialState;
+  const [state, dispatch] = useReducer(gameReducer, initialGameState);
 
   // Game tick
   useEffect(() => {
@@ -111,7 +114,7 @@ function App() {
   useEffect(() => {
     const interval = setInterval(() => {
       localStorage.setItem('gameState', JSON.stringify(state));
-      console.log("Game state autosaved");
+      console.log("Game state autosaved:", state);
     }, 10000);
     return () => clearInterval(interval);
   }, [state]);
@@ -122,12 +125,14 @@ function App() {
     const handleKeyPress = (e) => {
       if (e.key === 's' || e.key === 'S') {
         localStorage.setItem('gameState', JSON.stringify(state));
-        console.log("Game state saved");
+        console.log("Game state saved:", state);
       } else if (e.key === 'l' || e.key === 'L') {
         const savedState = localStorage.getItem('gameState');
         if (savedState) {
-          dispatch({ type: 'LOAD_STATE', payload: JSON.parse(savedState) });
-          console.log("Game state loaded");
+          const loadedState = JSON.parse(savedState);
+          console.log("Loading game state:", loadedState);
+          dispatch({ type: 'LOAD_STATE', payload: loadedState });
+          console.log("Game state loaded:", loadedState);
         }
       }
     };
