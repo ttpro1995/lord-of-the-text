@@ -94,22 +94,18 @@ function App() {
   const initialGameState = savedState ? JSON.parse(savedState) : initialState;
   const [state, dispatch] = useReducer(gameReducer, initialGameState);
 
-  // Game tick
+  // Combined game tick and autosave
   useEffect(() => {
     const interval = setInterval(() => {
+      // Dispatch TICK action
       const action = { type: 'TICK' };
       dispatch(action);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
-  // Autosave
-  useEffect(() => {
-    const interval = setInterval(() => {
+      // Autosave
       console.log("Game state before autosaved:", state);
       localStorage.setItem('gameState', JSON.stringify(state));
       console.log("Game state autosaved:", state);
-    }, 900);
+    }, 1000);
     return () => clearInterval(interval);
   }, [state]);
 
