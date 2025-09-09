@@ -3,13 +3,13 @@ import { gameReducer, initialState } from '../src/App.jsx';
 import buildingDefinitions from '../data/building-definitions.json';
 
 describe('Milestone 1 - Timber Resource System', () => {
-  it('should start with 60 timber', () => {
-    expect(initialState.resources.timber).toBe(60);
+  it('should start with 100 timber', () => {
+    expect(initialState.resources.timber).toBe(100);
   });
 
-  it('should produce 1 timber per tick by default', () => {
+  it('timber should stay the same per tick by default (no base production)', () => {
     const state = gameReducer(initialState, { type: 'TICK' });
-    expect(state.resources.timber).toBe(1);
+    expect(state.resources.timber).toBe(100);
   });
 
 
@@ -34,11 +34,11 @@ describe('Milestone 1 - Timber Resource System', () => {
     // Check that Lumber-Camp was built
     expect(stateAfterBuild.buildings['Lumber-Camp']).toBe(1);
 
-    // Check timber production - base 1 + Lumber-Camp Lv 1 production
-    // Lumber-Camp Lv 1 produces 5 timber per minute = 5/60 per second
+    // Check timber production - only from Lumber-Camp Lv 1 (no base production)
+    // Lumber-Camp Lv 1 produces 5 timber per minute = 5/60 per tick
     const stateAfterTick = gameReducer(stateAfterBuild, { type: 'TICK' });
     expect(stateAfterTick.resources.timber).toBeCloseTo(
-      stateAfterBuild.resources.timber + 1 + (5/60), 
+      stateAfterBuild.resources.timber + (5/60),
       10
     );
   });
@@ -67,11 +67,11 @@ describe('Milestone 1 - Timber Resource System', () => {
     // Check that Lumber-Camp was upgraded
     expect(stateAfterUpgrade.buildings['Lumber-Camp']).toBe(2);
 
-    // Check timber production - base 1 + Lumber-Camp Lv 2 production
-    // Lumber-Camp Lv 2 produces 12 timber per minute = 12/60 per second
+    // Check timber production - only from Lumber-Camp Lv 2 (no base production)
+    // Lumber-Camp Lv 2 produces 12 timber per minute = 12/60 per tick
     const stateAfterTick = gameReducer(stateAfterUpgrade, { type: 'TICK' });
     expect(stateAfterTick.resources.timber).toBeCloseTo(
-      stateAfterUpgrade.resources.timber + 1 + (12/60),
+      stateAfterUpgrade.resources.timber + (12/60),
       10
     );
   });
@@ -100,11 +100,11 @@ describe('Milestone 1 - Timber Resource System', () => {
     // Check that Lumber-Camp was upgraded
     expect(stateAfterUpgrade.buildings['Lumber-Camp']).toBe(3);
 
-    // Check timber production - base 1 + Lumber-Camp Lv 3 production
-    // Lumber-Camp Lv 3 produces 28 timber per minute = 28/60 per second
+    // Check timber production - only from Lumber-Camp Lv 3 (no base production)
+    // Lumber-Camp Lv 3 produces 28 timber per minute = 28/60 per tick
     const stateAfterTick = gameReducer(stateAfterUpgrade, { type: 'TICK' });
     expect(stateAfterTick.resources.timber).toBeCloseTo(
-      stateAfterUpgrade.resources.timber + 1 + (28/60),
+      stateAfterUpgrade.resources.timber + (28/60),
       10
     );
   });
@@ -138,8 +138,8 @@ describe('Milestone 1 - Timber Resource System', () => {
       currentState = gameReducer(currentState, { type: 'TICK' });
     }
 
-    // Verify timber has increased (faster than base production)
-    expect(currentState.resources.timber).toBeGreaterThan(timberBeforeTicks + 10);
+    // Verify timber has increased from Lumber-Camp production
+    expect(currentState.resources.timber).toBeGreaterThan(timberBeforeTicks);
 
     // Simulate ticks until timber reaches cap
     while (currentState.resources.timber < 200) {
@@ -160,13 +160,22 @@ describe('Milestone 1 - Timber Resource System', () => {
     };
 
     // Upgrade Lumber-Camp
-    currentState = gameReducer(currentState, { 
-      type: 'UPGRADE', 
-      payload: 'Lumber-Camp' 
+    currentState = gameReducer(currentState, {
+      type: 'UPGRADE',
+      payload: 'Lumber-Camp'
     });
 
     // Verify Lumber-Camp is upgraded
     expect(currentState.buildings['Lumber-Camp']).toBe(2);
+
+    // Set timber to a value below cap to test production increase
+    currentState = {
+      ...currentState,
+      resources: {
+        ...currentState.resources,
+        timber: 190
+      }
+    };
 
     // Simulate several ticks after upgrade
     timberBeforeTicks = currentState.resources.timber;
@@ -174,7 +183,7 @@ describe('Milestone 1 - Timber Resource System', () => {
       currentState = gameReducer(currentState, { type: 'TICK' });
     }
 
-    // Verify timber has increased (even faster production after upgrade)
+    // Verify timber has increased from upgraded Lumber-Camp
     expect(currentState.resources.timber).toBeGreaterThan(timberBeforeTicks);
   });
 });

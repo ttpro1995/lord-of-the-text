@@ -1,0 +1,10 @@
+{
+  "unitCosts": {
+    "Peasant-Spear": {
+      "food": 10,
+      "timber": 5
+    }
+  },
+  "baseUnitCap": 5,
+  "unitCapPerBarracksLevel": 5
+}

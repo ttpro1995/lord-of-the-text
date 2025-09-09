@@ -192,5 +192,72 @@ describe('Milestone 2 - Growing Estate (v0.3)', () => {
       expect(state.notifications.length).toBeGreaterThan(0);
       expect(state.notifications[0]).toContain('Unit ready');
     });
+
+    it('should show building complete notification when building new structure', () => {
+      // Ensure we have enough resources for Farm (40 timber, 20 stone)
+      state.resources.timber = 100;
+      state.resources.stone = 50;
+
+      // Build Farm
+      const newState = gameReducer(state, { type: 'BUILD', payload: 'Farm' });
+
+      // Check notification
+      expect(newState.notifications.length).toBe(1);
+      expect(newState.notifications[0]).toBe('Farm complete');
+      expect(newState.buildings['Farm']).toBe(1);
+      expect(newState.resources.timber).toBe(60); // 100 - 40 = 60
+      expect(newState.resources.stone).toBe(30); // 50 - 20 = 30
+    });
+
+    it('should show building complete notification when upgrading existing building', () => {
+      // Set up Farm at level 1
+      state.buildings['Farm'] = 1;
+      // Ensure we have enough resources for upgrade (80 timber, 40 stone)
+      state.resources.timber = 100;
+      state.resources.stone = 50;
+
+      // Upgrade Farm to level 2
+      const newState = gameReducer(state, { type: 'UPGRADE', payload: 'Farm' });
+
+      // Check notification
+      expect(newState.notifications.length).toBe(1);
+      expect(newState.notifications[0]).toBe('Farm complete');
+      expect(newState.buildings['Farm']).toBe(2);
+      expect(newState.resources.timber).toBe(20); // 100 - 80 = 20
+      expect(newState.resources.stone).toBe(10); // 50 - 40 = 10
+    });
+
+    it('should not show notification when building fails due to dependencies', () => {
+      // Try to build Iron Mine without Quarry level 2
+      // Iron Mine requires Quarry level 2
+      state.buildings['Quarry'] = 1; // Only level 1
+      state.resources.timber = 200;
+      state.resources.stone = 100;
+      state.resources.food = 200;
+
+      const newState = gameReducer(state, { type: 'BUILD', payload: 'Iron-Mine' });
+
+      // Should not build and no notification
+      expect(newState.buildings['Iron-Mine']).toBe(0);
+      expect(newState.notifications.length).toBe(0);
+    });
+
+    it('should not show notification when building fails due to insufficient resources', () => {
+      // Try to build Barracks with insufficient resources
+      // Barracks requires 70 timber, 50 food but we only have 50 timber, 30 food
+      state.resources.timber = 50;
+      state.resources.food = 30;
+      // Ensure dependency (Farm level 2) is met
+      state.buildings['Farm'] = 2;
+
+      const newState = gameReducer(state, { type: 'BUILD', payload: 'Barracks' });
+
+      // Should not build and no notification
+      expect(newState.buildings['Barracks']).toBe(0);
+      expect(newState.notifications.length).toBe(0);
+      // Resources should remain unchanged
+      expect(newState.resources.timber).toBe(50);
+      expect(newState.resources.food).toBe(30);
+    });
   });
 });

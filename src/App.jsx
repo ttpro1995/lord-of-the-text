@@ -1,17 +1,18 @@
 import { useReducer, useEffect, useState } from 'react';
 import './App.css';
 import buildingDefinitions from '../data/building-definitions.json';
+import gameConstants from './data/game-constants.json';
 
 // Initial state
 export const initialState = {
   playerName: "Lord",
   resources: {
-    timber: 60,
-    stone: 60,
-    iron: 10,
-    food: 10,
-    gold: 10,
-    knowledge: 10
+    timber: 100,
+    stone: 100,
+    iron: 20,
+    food: 20,
+    gold: 20,
+    knowledge: 20
   },
   buildings: {
     "Lumber-Camp": 0,
@@ -36,8 +37,8 @@ export const RESOURCE_CAPS = {
   knowledge: 200
 };
 
-export const BASE_UNIT_CAP = 5;
-export const UNIT_CAP_PER_BARRACKS_LEVEL = 5;
+export const BASE_UNIT_CAP = gameConstants.baseUnitCap;
+export const UNIT_CAP_PER_BARRACKS_LEVEL = gameConstants.unitCapPerBarracksLevel;
 
 // Reducer function
 export function gameReducer(state, action) {
@@ -102,8 +103,9 @@ export function gameReducer(state, action) {
       });
 
       if (!hasDependencies) {
-        console.log(`Missing dependencies for ${buildingName}`);
-        return state;
+        const notifications = [...state.notifications];
+        notifications.push(`Missing dependencies for ${buildingName.replace('-', ' ')}`);
+        return { ...state, notifications };
       }
 
       const costs = definition.cost;
@@ -132,15 +134,14 @@ export function gameReducer(state, action) {
         };
       }
       if (!canAfford) {
-        console.log(`Cannot afford to build ${buildingName} level ${nextLevel}`);
+        const notifications = [...state.notifications];
+        notifications.push(`Cannot afford ${buildingName.replace('-', ' ')} level ${nextLevel}`);
+        return { ...state, notifications };
       }
-      return state;
     }
     case 'TRAIN_UNIT': {
       const { unitType } = action.payload;
-      const unitCost = {
-        "Peasant-Spear": { food: 10, timber: 5 }
-      }[unitType];
+      const unitCost = gameConstants.unitCosts[unitType];
 
       if (!unitCost) return state;
 
@@ -178,6 +179,50 @@ export function gameReducer(state, action) {
         unitQueue: newUnitQueue
       };
     }
+    case 'OFFLINE_PROGRESS': {
+      const { seconds } = action.payload;
+      let newResources = { ...state.resources };
+      let newUnits = [...state.units];
+      let newUnitQueue = [...state.unitQueue];
+      let notifications = [...state.notifications]; // Copy any existing notifications
+
+      // Calculate resource production over offline period
+      Object.entries(state.buildings).forEach(([buildingName, level]) => {
+        if (level > 0 && buildingDefinitions[buildingName]) {
+          const production = buildingDefinitions[buildingName][level].production || {};
+          Object.entries(production).forEach(([resource, amountPerMinute]) => {
+            const amountPerSecond = amountPerMinute / 60;
+            const totalGain = amountPerSecond * seconds;
+            newResources[resource] = Math.min(
+              RESOURCE_CAPS[resource],
+              newResources[resource] + totalGain
+            );
+          });
+        }
+      });
+
+      // Advance unit training queue over offline period
+      newUnitQueue = newUnitQueue.map(item => {
+        const newProgress = item.progress + seconds;
+        if (newProgress >= item.trainingTime) {
+          newUnits.push({
+            type: item.type,
+            id: Date.now() + Math.random()
+          });
+          notifications.push(`Unit ready: ${item.type}`);
+          return null; // Remove from queue
+        }
+        return { ...item, progress: newProgress };
+      }).filter(Boolean);
+
+      return {
+        ...state,
+        resources: newResources,
+        units: newUnits,
+        unitQueue: newUnitQueue,
+        notifications: notifications
+      };
+    }
     case 'LOAD_STATE':
       return action.payload;
     default:
@@ -201,10 +246,8 @@ function App() {
       if (offlineSeconds > 0) {
         console.log(`Calculating offline progress for ${offlineSeconds} seconds`);
 
-        // Apply offline ticks
-        for (let i = 0; i < offlineSeconds; i++) {
-          dispatch({ type: 'TICK' });
-        }
+        // Apply offline progress in a single dispatch
+        dispatch({ type: 'OFFLINE_PROGRESS', payload: { seconds: offlineSeconds } });
       }
     }
 
