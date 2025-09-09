@@ -1,4 +1,4 @@
-import { useReducer, useEffect } from 'react';
+import { useReducer, useEffect, useState } from 'react';
 import './App.css';
 import buildingDefinitions from '../data/building-definitions.json';
 
@@ -14,35 +14,75 @@ export const initialState = {
     knowledge: 10
   },
   buildings: {
-    "Lumber-Camp": 0
+    "Lumber-Camp": 0,
+    "Farm": 0,
+    "Quarry": 0,
+    "Iron-Mine": 0,
+    "Barracks": 0,
+    "Warehouse": 0
   },
-  version: "v0.2"
+  units: [],
+  unitQueue: [],
+  notifications: [],
+  version: "v0.3"
 };
 
-export const TIMBER_CAP = 200;
+export const RESOURCE_CAPS = {
+  timber: 200,
+  stone: 200,
+  iron: 200,
+  food: 200,
+  gold: 200,
+  knowledge: 200
+};
+
+export const BASE_UNIT_CAP = 5;
+export const UNIT_CAP_PER_BARRACKS_LEVEL = 5;
 
 // Reducer function
 export function gameReducer(state, action) {
   switch (action.type) {
     case 'TICK': {
-      let timberProduction = 2; // Base production
-      let stoneProduction = 1; // Base production for stone
-      const lumberCampLevel = state.buildings["Lumber-Camp"];
-      if (lumberCampLevel > 0) {
-        const productionPerMinute = buildingDefinitions["Lumber-Camp"][lumberCampLevel].production.timber;
-        timberProduction += productionPerMinute / 60;
-      }
+      let newResources = { ...state.resources };
 
-      const newTimber = Math.min(TIMBER_CAP, state.resources.timber + timberProduction);
-      const newStone = state.resources.stone + stoneProduction;
+      // Process resource production from buildings
+      Object.entries(state.buildings).forEach(([buildingName, level]) => {
+        if (level > 0 && buildingDefinitions[buildingName]) {
+          const production = buildingDefinitions[buildingName][level].production || {};
+          Object.entries(production).forEach(([resource, amount]) => {
+            const amountPerTick = amount / 60;
+            newResources[resource] = Math.min(
+              RESOURCE_CAPS[resource],
+              newResources[resource] + amountPerTick
+            );
+          });
+        }
+      });
+
+      // Process unit training queue
+      let newUnitQueue = [...state.unitQueue];
+      let newUnits = [...state.units];
+      let notifications = [];
+
+      newUnitQueue = newUnitQueue.map(item => {
+        const updatedItem = { ...item, progress: item.progress + 1 };
+        if (updatedItem.progress >= updatedItem.trainingTime) {
+          newUnits.push({
+            type: updatedItem.type,
+            id: Date.now() + Math.random()
+          });
+          notifications.push(`Unit ready: ${updatedItem.type}`);
+          return null; // Remove from queue
+        }
+        return updatedItem;
+      }).filter(Boolean);
 
       return {
         ...state,
-        resources: {
-          ...state.resources,
-          timber: newTimber,
-          stone: newStone
-        }
+        resources: newResources,
+        units: newUnits,
+        unitQueue: newUnitQueue,
+        notifications: notifications.length > 0 ? notifications : state.notifications
       };
     }
     case 'BUILD':
@@ -53,6 +93,18 @@ export function gameReducer(state, action) {
       const definition = buildingDefinitions[buildingName]?.[nextLevel];
 
       if (!definition) return state; // Max level reached or invalid building
+
+      // Check dependencies
+      const dependencies = definition.dependencies || [];
+      const hasDependencies = dependencies.every(dep => {
+        const requiredBuildingLevel = state.buildings[dep.building] || 0;
+        return requiredBuildingLevel >= dep.level;
+      });
+
+      if (!hasDependencies) {
+        console.log(`Missing dependencies for ${buildingName}`);
+        return state;
+      }
 
       const costs = definition.cost;
       const canAfford = Object.entries(costs).every(
@@ -67,6 +119,8 @@ export function gameReducer(state, action) {
           newResources[resourceKey] -= cost;
         });
 
+        const notifications = [`${buildingName} complete`];
+
         return {
           ...state,
           resources: newResources,
@@ -74,12 +128,55 @@ export function gameReducer(state, action) {
             ...state.buildings,
             [buildingName]: nextLevel,
           },
+          notifications: notifications
         };
       }
       if (!canAfford) {
         console.log(`Cannot afford to build ${buildingName} level ${nextLevel}`);
       }
       return state;
+    }
+    case 'TRAIN_UNIT': {
+      const { unitType } = action.payload;
+      const unitCost = {
+        "Peasant-Spear": { food: 10, timber: 5 }
+      }[unitType];
+
+      if (!unitCost) return state;
+
+      const canAfford = Object.entries(unitCost).every(
+        ([resource, cost]) => state.resources[resource] >= cost
+      );
+
+      if (!canAfford) return state;
+
+      const barracksLevel = state.buildings["Barracks"] || 0;
+      const unitCap = BASE_UNIT_CAP + (barracksLevel * UNIT_CAP_PER_BARRACKS_LEVEL);
+
+      if (state.units.length >= unitCap) {
+        console.log("Unit cap reached");
+        return state;
+      }
+
+      const newResources = { ...state.resources };
+      Object.entries(unitCost).forEach(([resource, cost]) => {
+        newResources[resource] -= cost;
+      });
+
+      const newUnitQueue = [
+        ...state.unitQueue,
+        {
+          type: unitType,
+          progress: 0,
+          trainingTime: 30 // 30 seconds for Peasant Spear
+        }
+      ];
+
+      return {
+        ...state,
+        resources: newResources,
+        unitQueue: newUnitQueue
+      };
     }
     case 'LOAD_STATE':
       return action.payload;
@@ -91,8 +188,29 @@ export function gameReducer(state, action) {
 function App() {
   // Try to load saved state from localStorage, or use initialState if none exists
   const savedState = localStorage.getItem('gameState');
+  const lastActive = localStorage.getItem('lastActive');
   const initialGameState = savedState ? JSON.parse(savedState) : initialState;
   const [state, dispatch] = useReducer(gameReducer, initialGameState);
+
+  // Calculate offline progress
+  useEffect(() => {
+    if (lastActive) {
+      const now = Date.now();
+      const offlineSeconds = Math.floor((now - parseInt(lastActive)) / 1000);
+
+      if (offlineSeconds > 0) {
+        console.log(`Calculating offline progress for ${offlineSeconds} seconds`);
+
+        // Apply offline ticks
+        for (let i = 0; i < offlineSeconds; i++) {
+          dispatch({ type: 'TICK' });
+        }
+      }
+    }
+
+    // Update last active timestamp
+    localStorage.setItem('lastActive', Date.now().toString());
+  }, [lastActive]);
 
   // Combined game tick and autosave
   useEffect(() => {
@@ -104,6 +222,7 @@ function App() {
       // Autosave
       console.log("Game state before autosaved:", state);
       localStorage.setItem('gameState', JSON.stringify(state));
+      localStorage.setItem('lastActive', Date.now().toString());
       console.log("Game state autosaved:", state);
     }, 1000);
     return () => clearInterval(interval);
@@ -140,18 +259,48 @@ function App() {
     }
   };
 
+  const handleTrainUnit = (unitType) => {
+    dispatch({ type: 'TRAIN_UNIT', payload: { unitType } });
+  };
+
   const renderBuildingCard = (buildingName) => {
     const currentLevel = state.buildings[buildingName] || 0;
     const nextLevel = currentLevel + 1;
     const definition = buildingDefinitions[buildingName]?.[nextLevel];
     const costString = definition ? Object.entries(definition.cost).map(([res, val]) => `${val} ${res.charAt(0).toUpperCase()}`).join(', ') : '';
 
+    // Check dependencies
+    const dependencies = definition?.dependencies || [];
+    const hasDependencies = dependencies.every(dep => {
+      const requiredBuildingLevel = state.buildings[dep.building] || 0;
+      return requiredBuildingLevel >= dep.level;
+    });
+
+    // Check if we can afford the building
+    const costs = definition?.cost || {};
+    const canAfford = Object.entries(costs).every(
+      ([resource, cost]) => state.resources[resource.toLowerCase()] >= cost
+    );
+
+    // Get dependency info for tooltip
+    const dependencyInfo = dependencies.map(dep => {
+      const requiredBuildingLevel = state.buildings[dep.building] || 0;
+      const buildingNameFormatted = dep.building.replace('-', ' ');
+      return `${buildingNameFormatted} (Lv ${requiredBuildingLevel}/${dep.level})`;
+    }).join(', ');
+
     return (
       <div className="building-card">
         <h3>{buildingName.replace('-', ' ')} (Lv {currentLevel})</h3>
         {definition ? (
-          <button onClick={() => handleBuildUpgrade(buildingName)}>
+          <button
+            onClick={() => handleBuildUpgrade(buildingName)}
+            disabled={!hasDependencies || !canAfford}
+            title={!hasDependencies ? `Requires: ${dependencyInfo}` : !canAfford ? "Not enough resources" : ""}
+          >
             {currentLevel === 0 ? 'Build' : 'Upgrade to Lv ' + nextLevel} ({costString})
+            {!hasDependencies && <span className="dependency-lock"> (Locked)</span>}
+            {!canAfford && <span className="resource-lock"> (Not enough resources)</span>}
           </button>
         ) : (
           <p>Max Level Reached</p>
@@ -159,6 +308,10 @@ function App() {
       </div>
     );
   };
+
+  // Calculate unit cap
+  const barracksLevel = state.buildings["Barracks"] || 0;
+  const unitCap = BASE_UNIT_CAP + (barracksLevel * UNIT_CAP_PER_BARRACKS_LEVEL);
 
   return (
     <div className="app">
@@ -177,11 +330,51 @@ function App() {
         <p>Welcome, {state.playerName}!</p>
         <div className="buildings">
           {renderBuildingCard("Lumber-Camp")}
+          {renderBuildingCard("Farm")}
+          {renderBuildingCard("Quarry")}
+          {renderBuildingCard("Iron-Mine")}
+          {renderBuildingCard("Barracks")}
+          {renderBuildingCard("Warehouse")}
+        </div>
+        <div className="unit-training">
+          <h3>Unit Training</h3>
+          <p title={`Base cap: ${BASE_UNIT_CAP}, +${UNIT_CAP_PER_BARRACKS_LEVEL} per Barracks level`}>
+            Unit Cap: {state.units.length}/{unitCap}
+          </p>
+          <button
+            onClick={() => handleTrainUnit("Peasant-Spear")}
+            disabled={state.units.length >= unitCap}
+          >
+            Train Peasant Spear (10 Food, 5 Timber)
+          </button>
+          <div className="training-queue">
+            <h4>Training Queue</h4>
+            {state.unitQueue.map((item, index) => (
+              <div key={index}>
+                {item.type} - {item.progress}/{item.trainingTime}s
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="units">
+          <h3>Your Units</h3>
+          <p>Total: {state.units.length}</p>
+          {state.units.map(unit => (
+            <div key={unit.id}>{unit.type}</div>
+          ))}
         </div>
       </main>
       <footer className="version-badge">
         {state.version}
       </footer>
+      {/* Toast Notifications */}
+      <div className="toast-notifications">
+        {state.notifications.map((notification, index) => (
+          <div key={index} className="toast">
+            {notification}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

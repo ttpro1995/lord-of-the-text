@@ -27,5 +27,189 @@
         "timber": 28
       }
     }
+  },
+  "Farm": {
+    "1": {
+      "cost": {
+        "timber": 40,
+        "stone": 20
+      },
+      "production": {
+        "food": 3
+      },
+      "dependencies": []
+    },
+    "2": {
+      "cost": {
+        "timber": 80,
+        "stone": 40
+      },
+      "production": {
+        "food": 6
+      },
+      "dependencies": []
+    },
+    "3": {
+      "cost": {
+        "timber": 160,
+        "stone": 80
+      },
+      "production": {
+        "food": 12
+      },
+      "dependencies": []
+    }
+  },
+  "Quarry": {
+    "1": {
+      "cost": {
+        "timber": 50,
+        "food": 30
+      },
+      "production": {
+        "stone": 4
+      },
+      "dependencies": []
+    },
+    "2": {
+      "cost": {
+        "timber": 100,
+        "food": 60
+      },
+      "production": {
+        "stone": 8
+      },
+      "dependencies": []
+    },
+    "3": {
+      "cost": {
+        "timber": 200,
+        "food": 120
+      },
+      "production": {
+        "stone": 16
+      },
+      "dependencies": []
+    }
+  },
+  "Iron-Mine": {
+    "1": {
+      "cost": {
+        "timber": 60,
+        "stone": 40,
+        "food": 20
+      },
+      "production": {
+        "iron": 2
+      },
+      "dependencies": [
+        {
+          "building": "Quarry",
+          "level": 2
+        }
+      ]
+    },
+    "2": {
+      "cost": {
+        "timber": 120,
+        "stone": 80,
+        "food": 40
+      },
+      "production": {
+        "iron": 4
+      },
+      "dependencies": [
+        {
+          "building": "Quarry",
+          "level": 2
+        }
+      ]
+    },
+    "3": {
+      "cost": {
+        "timber": 240,
+        "stone": 160,
+        "food": 80
+      },
+      "production": {
+        "iron": 8
+      },
+      "dependencies": [
+        {
+          "building": "Quarry",
+          "level": 2
+        }
+      ]
+    }
+  },
+  "Barracks": {
+    "1": {
+      "cost": {
+        "timber": 70,
+        "food": 50
+      },
+      "production": {},
+      "dependencies": [
+        {
+          "building": "Farm",
+          "level": 2
+        }
+      ]
+    },
+    "2": {
+      "cost": {
+        "timber": 140,
+        "food": 100
+      },
+      "production": {},
+      "dependencies": [
+        {
+          "building": "Farm",
+          "level": 2
+        }
+      ]
+    },
+    "3": {
+      "cost": {
+        "timber": 280,
+        "food": 200
+      },
+      "production": {},
+      "dependencies": [
+        {
+          "building": "Farm",
+          "level": 2
+        }
+      ]
+    }
+  },
+  "Warehouse": {
+    "1": {
+      "cost": {
+        "timber": 80,
+        "stone": 60,
+        "food": 40
+      },
+      "production": {},
+      "dependencies": []
+    },
+    "2": {
+      "cost": {
+        "timber": 160,
+        "stone": 120,
+        "food": 80
+      },
+      "production": {},
+      "dependencies": []
+    },
+    "3": {
+      "cost": {
+        "timber": 320,
+        "stone": 240,
+        "food": 160
+      },
+      "production": {},
+      "dependencies": []
+    }
   }
 }
