@@ -103,9 +103,7 @@ export function gameReducer(state, action) {
       });
 
       if (!hasDependencies) {
-        const notifications = [...state.notifications];
-        notifications.push(`Missing dependencies for ${buildingName.replace('-', ' ')}`);
-        return { ...state, notifications };
+        return state; // Don't show notification on dependency failure
       }
 
       const costs = definition.cost;
@@ -134,9 +132,7 @@ export function gameReducer(state, action) {
         };
       }
       if (!canAfford) {
-        const notifications = [...state.notifications];
-        notifications.push(`Cannot afford ${buildingName.replace('-', ' ')} level ${nextLevel}`);
-        return { ...state, notifications };
+        return state; // Don't show notification on resource failure
       }
     }
     case 'TRAIN_UNIT': {
@@ -154,7 +150,8 @@ export function gameReducer(state, action) {
       const barracksLevel = state.buildings["Barracks"] || 0;
       const unitCap = BASE_UNIT_CAP + (barracksLevel * UNIT_CAP_PER_BARRACKS_LEVEL);
 
-      if (state.units.length >= unitCap) {
+      // Check total units (trained + in queue) against cap
+      if (state.units.length + state.unitQueue.length >= unitCap) {
         console.log("Unit cap reached");
         return state;
       }
@@ -234,7 +231,11 @@ function App() {
   // Try to load saved state from localStorage, or use initialState if none exists
   const savedState = localStorage.getItem('gameState');
   const lastActive = localStorage.getItem('lastActive');
-  const initialGameState = savedState ? JSON.parse(savedState) : initialState;
+  const loadedState = savedState ? JSON.parse(savedState) : null;
+  // Merge loaded state with initialState to ensure all properties exist
+  const initialGameState = loadedState
+    ? { ...initialState, ...loadedState }
+    : initialState;
   const [state, dispatch] = useReducer(gameReducer, initialGameState);
 
   // Calculate offline progress
