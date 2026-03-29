@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { gameReducer, initialState } from '../src/App.jsx';
-import buildingDefinitions from '../data/building-definitions.json';
 
 describe('Milestone 1 - Timber Resource System', () => {
   it('should start with 100 timber', () => {
@@ -185,5 +184,82 @@ describe('Milestone 1 - Timber Resource System', () => {
 
     // Verify timber has increased from upgraded Lumber-Camp
     expect(currentState.resources.timber).toBeGreaterThan(timberBeforeTicks);
+  });
+});
+
+describe('Hard Reset Feature', () => {
+  it('should reset all state to initial values on HARD_RESET action', () => {
+    // Create a modified state with resources, buildings, and units
+    const modifiedState = {
+      ...initialState,
+      resources: {
+        timber: 500,
+        stone: 400,
+        iron: 100,
+        food: 300,
+        gold: 150,
+        knowledge: 200
+      },
+      buildings: {
+        'Lumber-Camp': 3,
+        'Farm': 2,
+        'Quarry': 2,
+        'Iron-Mine': 1,
+        'Barracks': 1,
+        'Warehouse': 1
+      },
+      units: [
+        { type: 'Peasant-Spear', id: 1 },
+        { type: 'Peasant-Spear', id: 2 }
+      ],
+      unitQueue: [
+        { type: 'Peasant-Spear', progress: 10, trainingTime: 30 }
+      ],
+      notifications: ['Building complete', 'Unit ready'],
+      version: 'v0.3'
+    };
+
+    // Dispatch HARD_RESET action
+    const resetState = gameReducer(modifiedState, { type: 'HARD_RESET' });
+
+    // Verify all resources are reset to initial values
+    expect(resetState.resources.timber).toBe(initialState.resources.timber);
+    expect(resetState.resources.stone).toBe(initialState.resources.stone);
+    expect(resetState.resources.iron).toBe(initialState.resources.iron);
+    expect(resetState.resources.food).toBe(initialState.resources.food);
+    expect(resetState.resources.gold).toBe(initialState.resources.gold);
+    expect(resetState.resources.knowledge).toBe(initialState.resources.knowledge);
+
+    // Verify all buildings are reset to initial values
+    expect(resetState.buildings['Lumber-Camp']).toBe(initialState.buildings['Lumber-Camp']);
+    expect(resetState.buildings['Farm']).toBe(initialState.buildings['Farm']);
+    expect(resetState.buildings['Quarry']).toBe(initialState.buildings['Quarry']);
+    expect(resetState.buildings['Iron-Mine']).toBe(initialState.buildings['Iron-Mine']);
+    expect(resetState.buildings['Barracks']).toBe(initialState.buildings['Barracks']);
+    expect(resetState.buildings['Warehouse']).toBe(initialState.buildings['Warehouse']);
+
+    // Verify units are reset
+    expect(resetState.units).toEqual([]);
+    expect(resetState.unitQueue).toEqual([]);
+
+    // Verify notifications are reset
+    expect(resetState.notifications).toEqual([]);
+
+    // Verify version is preserved (as it's part of initialState)
+    expect(resetState.version).toBe(initialState.version);
+  });
+
+  it('should reset state after multiple TICK actions', () => {
+    // Start with initial state and simulate some ticks
+    let state = initialState;
+    for (let i = 0; i < 10; i++) {
+      state = gameReducer(state, { type: 'TICK' });
+    }
+
+    // Dispatch HARD_RESET
+    const resetState = gameReducer(state, { type: 'HARD_RESET' });
+
+    // Should match initial state exactly
+    expect(resetState).toEqual(initialState);
   });
 });

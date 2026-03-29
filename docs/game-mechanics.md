@@ -44,6 +44,12 @@ Lord of the Text is an incremental base-building game where you manage a kingdom
 - Autosave to localStorage.
 - Idle accumulation with storage caps.
 
+### Hard Reset
+- Full game reset available in Settings > Danger Zone
+- Requires typing "RESET" to confirm
+- Clears all localStorage and resets game state to initial values
+- Triggers a full page reload after reset
+
 ### Core Loop Structure
 
 The core gameplay loop defines the repeating cycle of actions the player engages in to progress in Lord of the Text. The loop balances resource generation, expansion, and progression, ensuring continuous engagement.
