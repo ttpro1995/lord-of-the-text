@@ -131,3 +131,21 @@ Step-by-step walkthrough of Lord of the Text gameplay.
 - Manual save: Press 'S' key
 - Manual load: Press 'L' key
 - Offline progress accumulates up to storage limits
+
+## Hard Reset (Delete All Data)
+
+If you want to start over completely or troubleshoot issues, you can perform a Hard Reset:
+
+1. Click the **⚙️ Settings** button in the top bar
+2. Scroll down to the **⚠️ Danger Zone** section
+3. Click the **🗑️ Hard Reset (Delete All Data)** button
+4. In the confirmation dialog, type **RESET** exactly (case-sensitive)
+5. Click **Confirm Reset**
+
+**Warning:** This action is irreversible! It will:
+- Delete all your progress and resources
+- Remove all buildings and units
+- Clear all saved data from localStorage
+- Reset the game to its initial state
+
+After confirming, the page will reload and you'll start fresh with the default starting resources.

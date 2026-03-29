@@ -43,6 +43,8 @@ export const UNIT_CAP_PER_BARRACKS_LEVEL = gameConstants.unitCapPerBarracksLevel
 // Reducer function
 export function gameReducer(state, action) {
   switch (action.type) {
+    case 'HARD_RESET':
+      return initialState;
     case 'TICK': {
       let newResources = { ...state.resources };
 
@@ -237,6 +239,9 @@ function App() {
     ? { ...initialState, ...loadedState }
     : initialState;
   const [state, dispatch] = useReducer(gameReducer, initialGameState);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState('');
 
   // Calculate offline progress
   useEffect(() => {
@@ -307,6 +312,26 @@ function App() {
     dispatch({ type: 'TRAIN_UNIT', payload: { unitType } });
   };
 
+  const handleHardResetClick = () => {
+    setShowResetConfirm(true);
+  };
+
+  const handleHardResetConfirm = () => {
+    if (resetConfirmText === 'RESET') {
+      // Clear all localStorage
+      localStorage.clear();
+      // Dispatch reset action
+      dispatch({ type: 'HARD_RESET' });
+      // Reload the page
+      window.location.reload();
+    }
+  };
+
+  const handleHardResetCancel = () => {
+    setShowResetConfirm(false);
+    setResetConfirmText('');
+  };
+
   const renderBuildingCard = (buildingName) => {
     const currentLevel = state.buildings[buildingName] || 0;
     const nextLevel = currentLevel + 1;
@@ -360,7 +385,12 @@ function App() {
   return (
     <div className="app">
       <header className="top-bar">
-        <h1>Lord of the Text – {state.version}</h1>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <h1>Lord of the Text – {state.version}</h1>
+          <button className="settings-button" onClick={() => setShowSettings(true)}>
+            ⚙️ Settings
+          </button>
+        </div>
         <div className="resources">
           {Object.entries(state.resources).map(([resource, amount]) => (
             <div key={resource} className="resource">
@@ -419,6 +449,79 @@ function App() {
           </div>
         ))}
       </div>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="settings-modal-overlay" onClick={() => setShowSettings(false)}>
+          <div className="settings-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="settings-title">
+            <h2 id="settings-title">Settings</h2>
+            <p>Game Version: {state.version}</p>
+            <p>Resources are saved automatically every second.</p>
+            <p>Manual Save: Press 'S' key | Manual Load: Press 'L' key</p>
+            
+            <div className="danger-zone">
+              <h3>
+                <span className="warning-icon">⚠️</span>
+                Danger Zone
+              </h3>
+              <p>Warning: Actions in this section are irreversible and will permanently delete all your game progress.</p>
+              <button className="danger-button" onClick={handleHardResetClick}>
+                🗑️ Hard Reset (Delete All Data)
+              </button>
+            </div>
+
+            <button 
+              style={{ marginTop: '1rem', backgroundColor: '#7f8c8d' }} 
+              onClick={() => setShowSettings(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Dialog */}
+      {showResetConfirm && (
+        <div className="confirm-dialog-overlay" onClick={handleHardResetCancel}>
+          <div className="confirm-dialog" onClick={(e) => e.stopPropagation()} role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
+            <h3 id="confirm-title">
+              <span className="warning-icon">⚠️</span>
+              Confirm Hard Reset
+            </h3>
+            <div id="confirm-desc" className="warning-text">
+              <p><strong>WARNING:</strong> This action will:</p>
+              <ul>
+                <li>Delete all your progress and resources</li>
+                <li>Remove all buildings and units</li>
+                <li>Clear all saved data from localStorage</li>
+                <li>Reset the game to its initial state</li>
+              </ul>
+              <p><strong>This cannot be undone!</strong></p>
+            </div>
+            <p>Type <strong>RESET</strong> to confirm:</p>
+            <input
+              type="text"
+              value={resetConfirmText}
+              onChange={(e) => setResetConfirmText(e.target.value)}
+              placeholder="Type RESET here"
+              autoFocus
+              aria-label="Confirmation text input"
+            />
+            <div className="confirm-dialog-buttons">
+              <button className="cancel-button" onClick={handleHardResetCancel}>
+                Cancel
+              </button>
+              <button 
+                className="confirm-button" 
+                onClick={handleHardResetConfirm}
+                disabled={resetConfirmText !== 'RESET'}
+              >
+                Confirm Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
