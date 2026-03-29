@@ -6,21 +6,24 @@ describe('Milestone 2 - Growing Estate (v0.3)', () => {
   let state;
 
   beforeEach(() => {
-    state = { ...initialState };
+    state = JSON.parse(JSON.stringify(initialState));
   });
 
   describe('Building Construction and Upgrades', () => {
     it('should allow building Tier-0/1 buildings', () => {
-      // Test Farm construction
-      let newState = gameReducer(state, { type: 'BUILD', payload: 'Farm' });
+      // Test Farm construction (from fresh state each time to avoid resource issues)
+      let testState = { ...initialState };
+      let newState = gameReducer(testState, { type: 'BUILD', payload: 'Farm' });
       expect(newState.buildings['Farm']).toBe(1);
 
-      // Test Quarry construction
-      newState = gameReducer(newState, { type: 'BUILD', payload: 'Quarry' });
+      // Test Quarry construction (needs 50 timber, 30 food - initial food is only 20)
+      testState = { ...initialState, resources: { ...initialState.resources, food: 50 } };
+      newState = gameReducer(testState, { type: 'BUILD', payload: 'Quarry' });
       expect(newState.buildings['Quarry']).toBe(1);
 
-      // Test Warehouse construction
-      newState = gameReducer(newState, { type: 'BUILD', payload: 'Warehouse' });
+      // Test Warehouse construction (from fresh state with enough resources)
+      testState = { ...initialState, resources: { ...initialState.resources, timber: 200, stone: 200, food: 100 } };
+      newState = gameReducer(testState, { type: 'BUILD', payload: 'Warehouse' });
       expect(newState.buildings['Warehouse']).toBe(1);
     });
 
@@ -29,8 +32,9 @@ describe('Milestone 2 - Growing Estate (v0.3)', () => {
       let newState = gameReducer(state, { type: 'BUILD', payload: 'Iron-Mine' });
       expect(newState.buildings['Iron-Mine']).toBe(0);
 
-      // Build Quarry to Lv 2
-      newState = gameReducer(newState, { type: 'BUILD', payload: 'Quarry' });
+      // Build Quarry to Lv 2 (needs: 50+100=150 timber, 30+60=90 food for Quarry, plus 60 timber, 40 stone, 20 food for Iron Mine)
+      let testState = { ...initialState, resources: { ...initialState.resources, timber: 300, food: 200, stone: 100 } };
+      newState = gameReducer(testState, { type: 'BUILD', payload: 'Quarry' });
       newState = gameReducer(newState, { type: 'UPGRADE', payload: 'Quarry' });
       expect(newState.buildings['Quarry']).toBe(2);
 
@@ -44,8 +48,9 @@ describe('Milestone 2 - Growing Estate (v0.3)', () => {
       let newState = gameReducer(state, { type: 'BUILD', payload: 'Barracks' });
       expect(newState.buildings['Barracks']).toBe(0);
 
-      // Build Farm to Lv 2
-      newState = gameReducer(newState, { type: 'BUILD', payload: 'Farm' });
+      // Build Farm to Lv 2 (needs: 40+80=120 timber, 20+40=60 stone for Farm, plus 70 timber, 50 food for Barracks)
+      let testState = { ...initialState, resources: { ...initialState.resources, timber: 250, stone: 100, food: 100 } };
+      newState = gameReducer(testState, { type: 'BUILD', payload: 'Farm' });
       newState = gameReducer(newState, { type: 'UPGRADE', payload: 'Farm' });
       expect(newState.buildings['Farm']).toBe(2);
 
@@ -108,17 +113,25 @@ describe('Milestone 2 - Growing Estate (v0.3)', () => {
     });
 
     it('should increase unit cap with Barracks level', () => {
-      // Add enough resources
-      state.resources.food = 100;
-      state.resources.timber = 100;
+      // Add enough resources for Farm L1+L2, Barracks L1+L2, and 15 units
+      // Farm L1: 40 timber, 20 stone
+      // Farm L2: 80 timber, 40 stone
+      // Barracks L1: 70 timber, 50 food
+      // Barracks L2: 140 timber, 100 food
+      // 15 units: 150 food, 75 timber
+      state.resources.food = 400;
+      state.resources.timber = 600;
+      state.resources.stone = 100;
 
       // Build and upgrade Barracks to Lv 2
-      state.buildings['Farm'] = 2;
+      state = gameReducer(state, { type: 'BUILD', payload: 'Farm' });
+      state = gameReducer(state, { type: 'UPGRADE', payload: 'Farm' });
       state = gameReducer(state, { type: 'BUILD', payload: 'Barracks' });
       state = gameReducer(state, { type: 'UPGRADE', payload: 'Barracks' });
 
-      // Train 10 units (base 5 + 5 from Barracks Lv 2)
-      for (let i = 0; i < 10; i++) {
+      // Barracks Lv 2 gives cap = 5 (base) + 2*5 = 15
+      // Train 15 units
+      for (let i = 0; i < 15; i++) {
         state = gameReducer(state, {
           type: 'TRAIN_UNIT',
           payload: { unitType: 'Peasant-Spear' }
@@ -132,7 +145,7 @@ describe('Milestone 2 - Growing Estate (v0.3)', () => {
       });
 
       // Should not be able to train more
-      expect(newState.unitQueue.length).toBe(10); // Still 10, not 11
+      expect(newState.unitQueue.length).toBe(15); // Still 15, not 16
     });
   });
 
