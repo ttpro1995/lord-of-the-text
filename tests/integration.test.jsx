@@ -2,6 +2,13 @@ import { describe, it, expect, beforeEach, vi, beforeAll, afterAll } from 'vites
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import App, { gameReducer, initialState } from '../src/App.jsx';
 import buildingDefinitions from '../data/building-definitions.json';
+
+// Mock game constants
+vi.mock('../src/data/game-constants.json', async () => {
+  const actual = await vi.importActual('../src/data/game-constants.json');
+  return { ...actual, default: { ...actual } };
+});
+
 import gameConstants from '../src/data/game-constants.json';
 
 // Mock localStorage
