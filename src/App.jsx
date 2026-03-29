@@ -360,19 +360,34 @@ function App() {
 
     return (
       <div className="building-card">
-        <h3>{buildingName.replace('-', ' ')} (Lv {currentLevel})</h3>
+        <h3>
+          {buildingName.replace('-', ' ')}
+          <span className="building-level">Lv {currentLevel}</span>
+        </h3>
         {definition ? (
-          <button
-            onClick={() => handleBuildUpgrade(buildingName)}
-            disabled={!hasDependencies || !canAfford}
-            title={!hasDependencies ? `Requires: ${dependencyInfo}` : !canAfford ? "Not enough resources" : ""}
-          >
-            {currentLevel === 0 ? 'Build' : 'Upgrade to Lv ' + nextLevel} ({costString})
-            {!hasDependencies && <span className="dependency-lock"> (Locked)</span>}
-            {!canAfford && <span className="resource-lock"> (Not enough resources)</span>}
-          </button>
+          <>
+            <button
+              onClick={() => handleBuildUpgrade(buildingName)}
+              disabled={!hasDependencies || !canAfford}
+              title={!hasDependencies ? `Requires: ${dependencyInfo}` : !canAfford ? "Not enough resources" : ""}
+            >
+              {currentLevel === 0 ? 'Build' : `Upgrade to Lv ${nextLevel}`} ({costString})
+            </button>
+            {!hasDependencies && (
+              <div className="dependency-lock">
+                🔒 Requires: {dependencyInfo}
+              </div>
+            )}
+            {hasDependencies && !canAfford && (
+              <div className="resource-lock">
+                💰 Insufficient resources
+              </div>
+            )}
+          </>
         ) : (
-          <p>Max Level Reached</p>
+          <div className="max-level">
+            ✅ Max Level Reached
+          </div>
         )}
       </div>
     );
@@ -412,30 +427,57 @@ function App() {
         </div>
         <div className="unit-training">
           <h3>Unit Training</h3>
-          <p title={`Base cap: ${BASE_UNIT_CAP}, +${UNIT_CAP_PER_BARRACKS_LEVEL} per Barracks level`}>
-            Unit Cap: {state.units.length}/{unitCap}
-          </p>
+          <div className="unit-cap-display">
+            <p title={`Base cap: ${BASE_UNIT_CAP}, +${UNIT_CAP_PER_BARRACKS_LEVEL} per Barracks level`}>
+              Unit Cap: {state.units.length}/{unitCap}
+            </p>
+          </div>
           <button
+            className="train-unit-button"
             onClick={() => handleTrainUnit("Peasant-Spear")}
             disabled={state.units.length >= unitCap}
           >
-            Train Peasant Spear (10 Food, 5 Timber)
+            🗡️ Train Peasant Spear (10 Food, 5 Timber)
           </button>
           <div className="training-queue">
-            <h4>Training Queue</h4>
-            {state.unitQueue.map((item, index) => (
-              <div key={index}>
-                {item.type} - {item.progress}/{item.trainingTime}s
-              </div>
-            ))}
+            <h4>Training Queue ({state.unitQueue.length})</h4>
+            {state.unitQueue.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No units in training</p>
+            ) : (
+              state.unitQueue.map((item, index) => {
+                const progress = (item.progress / item.trainingTime) * 100;
+                return (
+                  <div key={index} className="training-item">
+                    <span>{item.type}</span>
+                    <div className="training-progress">
+                      <div 
+                        className="training-progress-bar" 
+                        style={{ width: `${progress}%` }}
+                      ></div>
+                    </div>
+                    <span>{item.progress}/{item.trainingTime}s</span>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
         <div className="units">
-          <h3>Your Units</h3>
-          <p>Total: {state.units.length}</p>
-          {state.units.map(unit => (
-            <div key={unit.id}>{unit.type}</div>
-          ))}
+          <h3>Your Army</h3>
+          <div className="unit-cap-display">
+            <p>Total Units: {state.units.length}</p>
+          </div>
+          {state.units.length === 0 ? (
+            <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No units trained yet</p>
+          ) : (
+            <div className="unit-list">
+              {state.units.map((unit, index) => (
+                <div key={unit.id || index} className="unit-item">
+                  🗡️ {unit.type.replace('-', ' ')}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
       <footer className="version-badge">
