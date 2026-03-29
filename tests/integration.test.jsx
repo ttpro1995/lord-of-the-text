@@ -2,13 +2,6 @@ import { describe, it, expect, beforeEach, vi, beforeAll, afterAll } from 'vites
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import App, { gameReducer, initialState } from '../src/App.jsx';
 import buildingDefinitions from '../data/building-definitions.json';
-
-// Mock game constants
-vi.mock('../src/data/game-constants.json', async () => {
-  const actual = await vi.importActual('../src/data/game-constants.json');
-  return { ...actual, default: { ...actual } };
-});
-
 import gameConstants from '../src/data/game-constants.json';
 
 // Mock localStorage
@@ -24,31 +17,17 @@ Object.defineProperty(window, 'localStorage', {
 
 // Mock Date.now for consistent timestamps
 const originalNow = Date.now;
-Date.now = vi.fn(() => 1000000000000);
-
-// Mock gameConstants for faster testing
-vi.mock('../src/data/game-constants.json', () => ({
-  unitCosts: {
-    "Peasant-Spear": {
-      "food": 10,
-      "timber": 5
-    }
-  },
-  baseUnitCap: 5,
-  unitCapPerBarracksLevel: 5
-}));
 
 describe('Integration Tests - End-to-End User Flows', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorageMock.getItem.mockReturnValue(null);
     localStorageMock.setItem.mockClear();
-    Date.now.mockReturnValue(1000000000000);
+    Date.now = vi.fn(() => 1000000000000);
   });
 
   afterEach(() => {
     Date.now = originalNow;
-    vi.useRealTimers();
   });
 
   it('should complete a full building-upgrade cycle', async () => {
@@ -68,20 +47,20 @@ describe('Integration Tests - End-to-End User Flows', () => {
     render(<App />);
 
     // Wait for the component to load
-    await screen.findByText('Lord of the Text');
+    await screen.findByText(/Lord of the Text/);
 
-    // Verify initial resources
-    expect(screen.getByText('T 300')).toBeInTheDocument();
-    expect(screen.getByText('S 200')).toBeInTheDocument();
+    // Verify initial resources (resource amounts are in separate spans)
+    expect(screen.getByText('300')).toBeInTheDocument();
+    expect(screen.getByText('200')).toBeInTheDocument();
 
-    // Find and click build Lumber-Camp button
-    const lumberCampButton = screen.getByRole('button', { name: /build.*lumber-camp/i });
+    // Find and click build Lumber-Camp button (button text is "Build (50 T, 30 S)")
+    const lumberCampButton = screen.getByRole('button', { name: /build.*50 T.*30 S/i });
     fireEvent.click(lumberCampButton);
 
     // Wait for state update and check resources after build
     await waitFor(() => {
-      expect(screen.getByText('T 250')).toBeInTheDocument(); // 300 - 50
-      expect(screen.getByText('S 170')).toBeInTheDocument(); // 200 - 30
+      expect(screen.getByText('250')).toBeInTheDocument(); // 300 - 50 timber
+      expect(screen.getByText('170')).toBeInTheDocument(); // 200 - 30 stone
     });
 
     // Check Lumber-Camp level is 1
@@ -90,14 +69,14 @@ describe('Integration Tests - End-to-End User Flows', () => {
     // Check for build notification
     expect(screen.getByText(/lumber-camp complete/i)).toBeInTheDocument();
 
-    // Find and click upgrade button for Lumber-Camp
-    const upgradeButton = screen.getByRole('button', { name: /upgrade.*lumber-camp.*lv 2/i });
+    // Find and click upgrade button for Lumber-Camp (button text is "Upgrade to Lv 2 (100 T, 60 S)")
+    const upgradeButton = screen.getByRole('button', { name: /upgrade.*lv 2.*100 T.*60 S/i });
     fireEvent.click(upgradeButton);
 
     // Wait for state update and check resources after upgrade
     await waitFor(() => {
-      expect(screen.getByText('T 150')).toBeInTheDocument(); // 250 - 100
-      expect(screen.getByText('S 110')).toBeInTheDocument(); // 170 - 60
+      expect(screen.getByText('150')).toBeInTheDocument(); // 250 - 100 timber
+      expect(screen.getByText('110')).toBeInTheDocument(); // 170 - 60 stone
     });
 
     // Check Lumber-Camp level is 2
@@ -127,37 +106,37 @@ describe('Integration Tests - End-to-End User Flows', () => {
     render(<App />);
 
     // Wait for the component to load
-    await screen.findByText('Lord of the Text');
+    await screen.findByText(/Lord of the Text/);
 
     // Build Farm to level 2 and Barracks, then train unit
     // To simulate user flow more realistically, let's go step by step but without fake timers for now
     // Since training takes 30 seconds, we can check the queue fills and then the unit appears
 
-    // Step 1: Build Farm level 1
-    const farmButton = screen.getByRole('button', { name: /build.*farm/i });
+    // Step 1: Build Farm level 1 (button text is "Build (40 T, 20 S)")
+    const farmButton = screen.getByRole('button', { name: /build.*40 T.*20 S/i });
     fireEvent.click(farmButton);
 
     await waitFor(() => {
-      expect(screen.getByText('T 360')).toBeInTheDocument();
-      expect(screen.getByText('S 80')).toBeInTheDocument();
+      expect(screen.getByText('360')).toBeInTheDocument(); // 400 - 40 timber
+      expect(screen.getByText('80')).toBeInTheDocument(); // 100 - 20 stone
     });
 
-    // Step 2: Upgrade Farm to level 2
-    const upgradeFarmButton = screen.getByRole('button', { name: /upgrade.*farm.*lv 2/i });
+    // Step 2: Upgrade Farm to level 2 (button text is "Upgrade to Lv 2 (80 T, 40 S)")
+    const upgradeFarmButton = screen.getByRole('button', { name: /upgrade.*lv 2.*80 T.*40 S/i });
     fireEvent.click(upgradeFarmButton);
 
     await waitFor(() => {
-      expect(screen.getByText('T 280')).toBeInTheDocument();
-      expect(screen.getByText('S 40')).toBeInTheDocument();
+      expect(screen.getByText('280')).toBeInTheDocument(); // 360 - 80 timber
+      expect(screen.getByText('40')).toBeInTheDocument(); // 80 - 40 stone
     });
 
-    // Step 3: Build Barracks
-    const barracksButton = screen.getByRole('button', { name: /build.*barracks/i });
+    // Step 3: Build Barracks (button text is "Build (70 T, 50 F)")
+    const barracksButton = screen.getByRole('button', { name: /build.*70 T.*50 F/i });
     fireEvent.click(barracksButton);
 
     await waitFor(() => {
-      expect(screen.getByText('T 210')).toBeInTheDocument();
-      expect(screen.getByText('F 150')).toBeInTheDocument();
+      expect(screen.getByText('210')).toBeInTheDocument(); // 280 - 70 timber
+      expect(screen.getByText('150')).toBeInTheDocument(); // 200 - 50 food
     });
 
     // Step 4: Train Peasant Spear
@@ -165,8 +144,8 @@ describe('Integration Tests - End-to-End User Flows', () => {
     fireEvent.click(trainButton);
 
     await waitFor(() => {
-      expect(screen.getByText('T 205')).toBeInTheDocument();
-      expect(screen.getByText('F 140')).toBeInTheDocument();
+      expect(screen.getByText('205')).toBeInTheDocument(); // 210 - 5 timber
+      expect(screen.getByText('140')).toBeInTheDocument(); // 150 - 10 food
     });
 
     // Verify training queue shows the unit

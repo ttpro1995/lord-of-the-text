@@ -14,3 +14,4 @@ Welcome to the official documentation for Lord of the Text, an incremental base-
 8. [Glossary](glossary.md) - Key terms and definitions
 9. [FAQ](faq.md) - Frequently asked questions
 10. [Release Notes](release-notes.md) - Change log and updates
+11. [Integration Testing Guide](integration-testing-guide.md) - End-to-end test patterns and best practices
