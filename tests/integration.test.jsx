@@ -61,8 +61,9 @@ describe('Integration Tests - End-to-End User Flows', () => {
       expect(screen.getByText('170')).toBeInTheDocument(); // 200 - 30 stone
     });
 
-    // Check Lumber-Camp level is 1
-    expect(screen.getByText('Lumber Camp (Lv 1)')).toBeInTheDocument();
+    // Check Lumber-Camp level is 1 - look for text content in the building card
+    expect(screen.getByText('Lumber Camp')).toBeInTheDocument();
+    expect(screen.getByText('Lv 1')).toBeInTheDocument();
 
     // Check for build notification
     expect(screen.getByText(/lumber-camp complete/i)).toBeInTheDocument();
@@ -77,8 +78,9 @@ describe('Integration Tests - End-to-End User Flows', () => {
       expect(screen.getByText('110')).toBeInTheDocument(); // 170 - 60 stone
     });
 
-    // Check Lumber-Camp level is 2
-    expect(screen.getByText('Lumber Camp (Lv 2)')).toBeInTheDocument();
+    // Check Lumber-Camp level is 2 - look for text content in the building card
+    expect(screen.getByText('Lumber Camp')).toBeInTheDocument();
+    expect(screen.getByText('Lv 2')).toBeInTheDocument();
 
     // Check for upgrade notification
     expect(screen.getByText(/lumber-camp complete/i)).toBeInTheDocument();
