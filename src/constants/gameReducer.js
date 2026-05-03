@@ -254,6 +254,17 @@ export function gameReducer(state, action) {
         units: newUnits
       };
     }
+    case 'BULK_DISMISS_UNITS': {
+      const { unitIds } = action.payload;
+      if (!unitIds || unitIds.length === 0) return state;
+
+      const newUnits = state.units.filter(u => !unitIds.includes(u.id));
+
+      return {
+        ...state,
+        units: newUnits
+      };
+    }
     case 'OFFLINE_PROGRESS': {
       const { seconds } = action.payload;
       let newResources = { ...state.resources };

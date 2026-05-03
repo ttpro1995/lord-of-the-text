@@ -82,3 +82,7 @@ npm run lint        # ESLint check
 - Resource caps apply to production, not spending - prevent overflow
 - Unit queue vs active units are separate arrays with different logic
 - Test failures often indicate missing dependency checks or incorrect resource calculations
+
+
+### Work Logging
+- **Always write to work-log what has been done** - Document completed tasks and changes

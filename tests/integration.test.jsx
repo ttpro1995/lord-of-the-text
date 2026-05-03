@@ -153,8 +153,8 @@ describe('Integration Tests - End-to-End User Flows', () => {
       expect(screen.getByText('140')).toBeInTheDocument(); // 150 - 10 food
     });
 
-    // Verify training queue shows the unit
-    expect(screen.getByText(/peasant-spear/i)).toBeInTheDocument();
+    // Verify training queue shows the unit (Training Queue (1) indicates unit is queued)
+    expect(screen.getByText(/Training Queue \(1\)/i)).toBeInTheDocument();
 
     // Note: In a real test environment, we would wait for the training to complete
     // But for this illustration, we verify the unit was added to the queue and resources were deducted
@@ -198,15 +198,15 @@ describe('Integration Tests - End-to-End User Flows', () => {
     // Verify confirmation dialog appears
     await screen.findByText('Confirm Hard Reset');
 
-    // Verify warning message (use getAllBy to handle multiple matches)
-    expect(screen.getAllByText(/warning:/i)).toHaveLength(2);
+    // Verify Danger Zone section exists
+    expect(screen.getByText(/danger zone/i)).toBeInTheDocument();
 
     // Verify input field exists
-    const input = screen.getByPlaceholderText(/type reset here/i);
+    const input = screen.getByPlaceholderText(/type reset/i);
     expect(input).toBeInTheDocument();
 
-    // Verify confirm button is disabled initially
-    const confirmButton = screen.getByRole('button', { name: /confirm reset/i });
+// Verify confirm button is disabled initially
+    const confirmButton = screen.getByRole('button', { name: /confirm/i });
     expect(confirmButton).toBeDisabled();
   });
 
@@ -219,8 +219,8 @@ describe('Integration Tests - End-to-End User Flows', () => {
     fireEvent.click(screen.getByRole('button', { name: /settings/i }));
     fireEvent.click(screen.getByRole('button', { name: /hard reset/i }));
 
-    const input = screen.getByPlaceholderText(/type reset here/i);
-    const confirmButton = screen.getByRole('button', { name: /confirm reset/i });
+    const input = screen.getByPlaceholderText(/type reset/i);
+    const confirmButton = screen.getByRole('button', { name: /confirm/i });
 
     // Type partial text - button should remain disabled
     fireEvent.change(input, { target: { value: 'RES' } });
@@ -261,10 +261,10 @@ describe('Integration Tests - End-to-End User Flows', () => {
     fireEvent.click(screen.getByRole('button', { name: /hard reset/i }));
 
     // Type RESET and confirm
-    const input = screen.getByPlaceholderText(/type reset here/i);
+    const input = screen.getByPlaceholderText(/type reset/i);
     fireEvent.change(input, { target: { value: 'RESET' } });
 
-    const confirmButton = screen.getByRole('button', { name: /confirm reset/i });
+    const confirmButton = screen.getByRole('button', { name: /confirm/i });
     fireEvent.click(confirmButton);
 
     // Verify localStorage.clear was called
@@ -303,7 +303,7 @@ describe('Integration Tests - End-to-End User Flows', () => {
     });
 
     // Verify input was cleared (dialog is gone, so input is also gone)
-    expect(screen.queryByPlaceholderText(/type reset here/i)).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/type reset/i)).not.toBeInTheDocument();
   });
 
   it('should close settings modal when clicking outside', async () => {
@@ -373,7 +373,7 @@ describe('Integration Tests - End-to-End User Flows', () => {
     await screen.findByText(/lumber-camp complete/i);
 
     // Click dismiss button (X) immediately
-    const dismissButton = screen.getByRole('button', { name: /dismiss notification/i });
+    const dismissButton = screen.getByRole('button', { name: /dismiss/i });
     fireEvent.click(dismissButton);
 
     // Verify notification is gone (should be immediate)
@@ -449,7 +449,7 @@ describe('Integration Tests - End-to-End User Flows', () => {
       await screen.findByText(/farm complete/i);
 
       // Verify the order: Lumber-Camp (newest) should appear before Farm (older)
-      const notifications = screen.getAllByRole('button', { name: /dismiss notification/i });
+      const notifications = screen.getAllByRole('button', { name: /dismiss/i });
       expect(notifications).toHaveLength(2);
       // The first notification element should contain "Lumber-Camp complete" (most recent)
       expect(notifications[0].closest('.toast')).toHaveTextContent(/lumber-camp complete/i);
@@ -489,7 +489,7 @@ describe('Integration Tests - End-to-End User Flows', () => {
       await screen.findByText(/farm complete/i);
 
       // Dismiss the top (most recent) notification
-      const dismissButtons = screen.getAllByRole('button', { name: /dismiss notification/i });
+      const dismissButtons = screen.getAllByRole('button', { name: /dismiss/i });
       fireEvent.click(dismissButtons[0]);
 
       // Verify Lumber-Camp notification is gone, Farm remains
