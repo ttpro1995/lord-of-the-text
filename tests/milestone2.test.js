@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { gameReducer, initialState } from '../src/App';
-import buildingDefinitions from '../data/building-definitions.json';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { gameReducer } from '../src/constants/gameReducer.js';
+import { initialState } from '../src/constants/gameState.js';
 
 describe('Milestone 2 - Growing Estate (v0.3)', () => {
   let state;

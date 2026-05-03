@@ -1,5 +1,4 @@
-import gameConstants from '../data/game-constants.json';
-import { BASE_UNIT_CAP, UNIT_CAP_PER_BARRACKS_LEVEL } from '../App.jsx';
+import { BASE_UNIT_CAP, UNIT_CAP_PER_BARRACKS_LEVEL } from '../constants/unitConstants.js';
 
 export const initialUnits = [];
 export const initialUnitQueue = [];
@@ -8,7 +7,6 @@ export function unitsReducer(state = { units: initialUnits, unitQueue: initialUn
   switch (action.type) {
     case 'TICK': {
       let { unitQueue, units } = state;
-      let newNotifications = []; // This should be handled in notifications, but to avoid, perhaps return notifications as well? No.
 
       // Since notifications are separate, but for simplicity, the reducer will return { units, unitQueue, notificationsFromUnits }
 
@@ -40,7 +38,7 @@ export function unitsReducer(state = { units: initialUnits, unitQueue: initialUn
 
       // For now, let's proceed with returning { units, unitQueue } from unitsReducer, and notifications will be handled elsewhere.
 
-      newUnitQueue = unitQueue.map(item => {
+      let newUnitQueue = unitQueue.map(item => {
         const updatedItem = { ...item, progress: item.progress + 1 };
         if (updatedItem.progress >= updatedItem.trainingTime) {
           units.push({
@@ -80,7 +78,6 @@ export function unitsReducer(state = { units: initialUnits, unitQueue: initialUn
     case 'OFFLINE_PROGRESS': {
       const { seconds } = action.payload;
       let { unitQueue, units } = state;
-      let notifications = []; // Again, skip
 
       let newUnitQueue = unitQueue.map(item => {
         const newProgress = item.progress + seconds;
