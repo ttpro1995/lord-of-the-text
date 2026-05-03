@@ -5,6 +5,12 @@
       "timber": 5
     }
   },
+  "unitTrainingTimes": {
+    "Peasant-Spear": 30
+  },
+  "unitFoodConsumption": {
+    "Peasant-Spear": 2
+  },
   "baseUnitCap": 5,
   "unitCapPerBarracksLevel": 5
 }

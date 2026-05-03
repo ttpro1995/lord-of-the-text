@@ -1,250 +1,9 @@
-import { useReducer, useEffect, useState } from 'react';
+import { useReducer, useEffect, useState, useRef } from 'react';
 import './App.css';
 import buildingDefinitions from '../data/building-definitions.json';
-import gameConstants from './data/game-constants.json';
-
-// Initial state
-export const initialState = {
-  playerName: "Lord",
-  resources: {
-    timber: 100,
-    stone: 100,
-    iron: 20,
-    food: 20,
-    gold: 20,
-    knowledge: 20
-  },
-  buildings: {
-    "Lumber-Camp": 0,
-    "Farm": 0,
-    "Quarry": 0,
-    "Iron-Mine": 0,
-    "Barracks": 0,
-    "Warehouse": 0
-  },
-  units: [],
-  unitQueue: [],
-  notifications: [],
-  version: "v0.3"
-};
-
-export const RESOURCE_CAPS = {
-  timber: 200,
-  stone: 200,
-  iron: 200,
-  food: 200,
-  gold: 200,
-  knowledge: 200
-};
-
-export const BASE_UNIT_CAP = gameConstants.baseUnitCap;
-export const UNIT_CAP_PER_BARRACKS_LEVEL = gameConstants.unitCapPerBarracksLevel;
-
-// Reducer function
-export function gameReducer(state, action) {
-  switch (action.type) {
-    case 'HARD_RESET':
-      return initialState;
-    case 'TICK': {
-      let newResources = { ...state.resources };
-
-      // Process resource production from buildings
-      Object.entries(state.buildings).forEach(([buildingName, level]) => {
-        if (level > 0 && buildingDefinitions[buildingName]) {
-          const production = buildingDefinitions[buildingName][level].production || {};
-          Object.entries(production).forEach(([resource, amount]) => {
-            const amountPerTick = amount / 60;
-            newResources[resource] = Math.min(
-              RESOURCE_CAPS[resource],
-              newResources[resource] + amountPerTick
-            );
-          });
-        }
-      });
-
-      // Process unit training queue
-      let newUnitQueue = [...state.unitQueue];
-      let newUnits = [...state.units];
-      let notifications = [];
-
-      newUnitQueue = newUnitQueue.map(item => {
-        const updatedItem = { ...item, progress: item.progress + 1 };
-        if (updatedItem.progress >= updatedItem.trainingTime) {
-          newUnits.push({
-            type: updatedItem.type,
-            id: Date.now() + Math.random()
-          });
-          notifications.push({
-            id: `notif-${Date.now()}-${Math.random()}`,
-            message: `Unit ready: ${updatedItem.type}`,
-            timestamp: Date.now()
-          });
-          return null; // Remove from queue
-        }
-        return updatedItem;
-      }).filter(Boolean);
-
-      return {
-        ...state,
-        resources: newResources,
-        units: newUnits,
-        unitQueue: newUnitQueue,
-        notifications: notifications.length > 0 ? notifications : state.notifications
-      };
-    }
-    case 'BUILD':
-    case 'UPGRADE': {
-      const buildingName = action.payload;
-      const currentLevel = state.buildings[buildingName] || 0;
-      const nextLevel = currentLevel + 1;
-      const definition = buildingDefinitions[buildingName]?.[nextLevel];
-
-      if (!definition) return state; // Max level reached or invalid building
-
-      // Check dependencies
-      const dependencies = definition.dependencies || [];
-      const hasDependencies = dependencies.every(dep => {
-        const requiredBuildingLevel = state.buildings[dep.building] || 0;
-        return requiredBuildingLevel >= dep.level;
-      });
-
-      if (!hasDependencies) {
-        return state; // Don't show notification on dependency failure
-      }
-
-      const costs = definition.cost;
-      const canAfford = Object.entries(costs).every(
-        ([resource, cost]) => state.resources[resource.toLowerCase()] >= cost
-      );
-
-      if (canAfford) {
-        console.log(`Deducting resources for ${buildingName} level ${nextLevel}:`, costs);
-        const newResources = { ...state.resources };
-        Object.entries(costs).forEach(([resource, cost]) => {
-          const resourceKey = resource.toLowerCase();
-          newResources[resourceKey] -= cost;
-        });
-
-        const newNotification = {
-          id: `notif-${Date.now()}-${Math.random()}`,
-          message: `${buildingName} complete`,
-          timestamp: Date.now()
-        };
-
-        return {
-          ...state,
-          resources: newResources,
-          buildings: {
-            ...state.buildings,
-            [buildingName]: nextLevel,
-          },
-          notifications: [newNotification, ...state.notifications]
-        };
-      }
-      if (!canAfford) {
-        return state; // Don't show notification on resource failure
-      }
-    }
-    case 'TRAIN_UNIT': {
-      const { unitType } = action.payload;
-      const unitCost = gameConstants.unitCosts[unitType];
-
-      if (!unitCost) return state;
-
-      const canAfford = Object.entries(unitCost).every(
-        ([resource, cost]) => state.resources[resource] >= cost
-      );
-
-      if (!canAfford) return state;
-
-      const barracksLevel = state.buildings["Barracks"] || 0;
-      const unitCap = BASE_UNIT_CAP + (barracksLevel * UNIT_CAP_PER_BARRACKS_LEVEL);
-
-      // Check total units (trained + in queue) against cap
-      if (state.units.length + state.unitQueue.length >= unitCap) {
-        console.log("Unit cap reached");
-        return state;
-      }
-
-      const newResources = { ...state.resources };
-      Object.entries(unitCost).forEach(([resource, cost]) => {
-        newResources[resource] -= cost;
-      });
-
-      const newUnitQueue = [
-        ...state.unitQueue,
-        {
-          type: unitType,
-          progress: 0,
-          trainingTime: 30 // 30 seconds for Peasant Spear
-        }
-      ];
-
-      return {
-        ...state,
-        resources: newResources,
-        unitQueue: newUnitQueue
-      };
-    }
-    case 'OFFLINE_PROGRESS': {
-      const { seconds } = action.payload;
-      let newResources = { ...state.resources };
-      let newUnits = [...state.units];
-      let newUnitQueue = [...state.unitQueue];
-      let notifications = [...state.notifications]; // Copy any existing notifications
-
-      // Calculate resource production over offline period
-      Object.entries(state.buildings).forEach(([buildingName, level]) => {
-        if (level > 0 && buildingDefinitions[buildingName]) {
-          const production = buildingDefinitions[buildingName][level].production || {};
-          Object.entries(production).forEach(([resource, amountPerMinute]) => {
-            const amountPerSecond = amountPerMinute / 60;
-            const totalGain = amountPerSecond * seconds;
-            newResources[resource] = Math.min(
-              RESOURCE_CAPS[resource],
-              newResources[resource] + totalGain
-            );
-          });
-        }
-      });
-
-      // Advance unit training queue over offline period
-      newUnitQueue = newUnitQueue.map(item => {
-        const newProgress = item.progress + seconds;
-        if (newProgress >= item.trainingTime) {
-          newUnits.push({
-            type: item.type,
-            id: Date.now() + Math.random()
-          });
-          notifications.push({
-            id: `notif-${Date.now()}-${Math.random()}`,
-            message: `Unit ready: ${item.type}`,
-            timestamp: Date.now()
-          });
-          return null; // Remove from queue
-        }
-        return { ...item, progress: newProgress };
-      }).filter(Boolean);
-
-      return {
-        ...state,
-        resources: newResources,
-        units: newUnits,
-        unitQueue: newUnitQueue,
-        notifications: notifications
-      };
-    }
-    case 'DISMISS_NOTIFICATION':
-      return {
-        ...state,
-        notifications: state.notifications.filter(n => n.id !== action.payload)
-      };
-    case 'LOAD_STATE':
-      return action.payload;
-    default:
-      return state;
-  }
-}
+import { initialState, calculateResourceCap } from './constants/gameState.js';
+import { BASE_UNIT_CAP, UNIT_CAP_PER_BARRACKS_LEVEL } from './constants/unitConstants.js';
+import { gameReducer } from './constants/gameReducer.js';
 
 function App() {
   // Try to load saved state from localStorage, or use initialState if none exists
@@ -259,6 +18,15 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState('');
+  const [activeTab, setActiveTab] = useState('kingdom');
+  const [trainQuantity, setTrainQuantity] = useState(1);
+  const stateRef = useRef(state);
+  const notificationTimers = useRef(new Map()); // Track active timers by notification ID
+
+  // Keep stateRef updated
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   // Calculate offline progress
   useEffect(() => {
@@ -282,33 +50,59 @@ function App() {
   useEffect(() => {
     const interval = setInterval(() => {
       // Dispatch TICK action
-      const action = { type: 'TICK' };
-      dispatch(action);
+      dispatch({ type: 'TICK' });
 
-      // Autosave
-      console.log("Game state before autosaved:", state);
-      localStorage.setItem('gameState', JSON.stringify(state));
+      // Autosave using current state
+      const currentState = stateRef.current;
+      localStorage.setItem('gameState', JSON.stringify(currentState));
       localStorage.setItem('lastActive', Date.now().toString());
-      console.log("Game state autosaved:", state);
     }, 1000);
     return () => clearInterval(interval);
-  }, [state]);
+  }, []); // Empty dependency array - interval created only once
 
-  // Auto-dismiss notifications after 5 seconds
+  // Auto-dismiss notifications after 5 seconds - only create timers for new notifications
   useEffect(() => {
-    const timers = state.notifications.map(notification => {
-      return setTimeout(() => {
-        dispatch({ type: 'DISMISS_NOTIFICATION', payload: notification.id });
-      }, 5000);
+    const activeTimers = notificationTimers.current;
+    
+    // Create timers for new notifications
+    state.notifications.forEach(notification => {
+      if (!activeTimers.has(notification.id)) {
+        const timer = setTimeout(() => {
+          dispatch({ type: 'DISMISS_NOTIFICATION', payload: notification.id });
+          activeTimers.delete(notification.id);
+        }, 5000);
+        activeTimers.set(notification.id, timer);
+      }
     });
-
-    return () => {
-      timers.forEach(timer => clearTimeout(timer));
-    };
+    
+    // Clean up timers for notifications that no longer exist
+    const currentNotificationIds = new Set(state.notifications.map(n => n.id));
+    Array.from(activeTimers.keys()).forEach(id => {
+      if (!currentNotificationIds.has(id)) {
+        clearTimeout(activeTimers.get(id));
+        activeTimers.delete(id);
+      }
+    });
   }, [state.notifications]);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    const activeTimers = notificationTimers.current;
+    return () => {
+      // Clear all notification timers on unmount
+      activeTimers.forEach(timer => clearTimeout(timer));
+      activeTimers.clear();
+    };
+  }, []);
 
   // Handler for manual dismiss
   const handleDismissNotification = (notificationId) => {
+    // Clear timer if exists
+    const activeTimers = notificationTimers.current;
+    if (activeTimers.has(notificationId)) {
+      clearTimeout(activeTimers.get(notificationId));
+      activeTimers.delete(notificationId);
+    }
     dispatch({ type: 'DISMISS_NOTIFICATION', payload: notificationId });
   };
 
@@ -338,13 +132,22 @@ function App() {
     const currentLevel = state.buildings[buildingName] || 0;
     if (currentLevel === 0) {
       dispatch({ type: 'BUILD', payload: buildingName });
-    } else {
-      dispatch({ type: 'UPGRADE', payload: buildingName });
-    }
+} else {
+       dispatch({ type: 'UPGRADE', payload: buildingName });
+     }
   };
 
-  const handleTrainUnit = (unitType) => {
-    dispatch({ type: 'TRAIN_UNIT', payload: { unitType } });
+  const handleTrainUnitsBatch = (unitType, quantity) => {
+    if (quantity <= 0) return;
+    dispatch({ type: 'TRAIN_UNITS_BATCH', payload: { unitType, quantity } });
+  };
+
+  const handleCancelTraining = (queueIndex) => {
+    dispatch({ type: 'CANCEL_TRAINING', payload: { queueIndex } });
+  };
+
+  const handleDismissUnit = (unitId) => {
+    dispatch({ type: 'DISMISS_UNIT', payload: { unitId } });
   };
 
   const handleHardResetClick = () => {
@@ -441,79 +244,160 @@ function App() {
             ⚙️ Settings
           </button>
         </div>
-        <div className="resources">
-          {Object.entries(state.resources).map(([resource, amount]) => (
-            <div key={resource} className="resource">
-              <span className="resource-icon">{resource.charAt(0).toUpperCase()}</span>
-              <span className="resource-amount">{Math.floor(amount)}</span>
-            </div>
-          ))}
-        </div>
+<div className="resources">
+           {Object.entries(state.resources).map(([resource, amount]) => {
+             const cap = calculateResourceCap(resource, state);
+             return (
+               <div key={resource} className="resource" title={`${resource.charAt(0).toUpperCase() + resource.slice(1)}: ${Math.floor(amount)}/${cap}`}>
+                 <span className="resource-icon">{resource.charAt(0).toUpperCase()}</span>
+                 <span className="resource-amount">{Math.floor(amount)}</span>
+                 {cap > 200 && (
+                   <span className="resource-cap">/ {cap}</span>
+                 )}
+               </div>
+             );
+           })}
+         </div>
       </header>
       <main className="game-content">
         <p>Welcome, {state.playerName}!</p>
-        <div className="buildings">
-          {renderBuildingCard("Lumber-Camp")}
-          {renderBuildingCard("Farm")}
-          {renderBuildingCard("Quarry")}
-          {renderBuildingCard("Iron-Mine")}
-          {renderBuildingCard("Barracks")}
-          {renderBuildingCard("Warehouse")}
-        </div>
-        <div className="unit-training">
-          <h3>Unit Training</h3>
-          <div className="unit-cap-display">
-            <p title={`Base cap: ${BASE_UNIT_CAP}, +${UNIT_CAP_PER_BARRACKS_LEVEL} per Barracks level`}>
-              Unit Cap: {state.units.length}/{unitCap}
-            </p>
-          </div>
-          <button
-            className="train-unit-button"
-            onClick={() => handleTrainUnit("Peasant-Spear")}
-            disabled={state.units.length >= unitCap}
+        
+        {/* Tab Navigation */}
+        <div className="tab-navigation">
+          <button 
+            className={`tab-button ${activeTab === 'kingdom' ? 'active' : ''}`}
+            onClick={() => setActiveTab('kingdom')}
           >
-            🗡️ Train Peasant Spear (10 Food, 5 Timber)
+            🏰 Kingdom
           </button>
-          <div className="training-queue">
-            <h4>Training Queue ({state.unitQueue.length})</h4>
-            {state.unitQueue.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No units in training</p>
-            ) : (
-              state.unitQueue.map((item, index) => {
-                const progress = (item.progress / item.trainingTime) * 100;
-                return (
-                  <div key={index} className="training-item">
-                    <span>{item.type}</span>
-                    <div className="training-progress">
-                      <div 
-                        className="training-progress-bar" 
-                        style={{ width: `${progress}%` }}
-                      ></div>
-                    </div>
-                    <span>{item.progress}/{item.trainingTime}s</span>
-                  </div>
-                );
-              })
-            )}
-          </div>
+          <button 
+            className={`tab-button ${activeTab === 'army' ? 'active' : ''}`}
+            onClick={() => setActiveTab('army')}
+          >
+            ⚔️ Army
+          </button>
         </div>
-        <div className="units">
-          <h3>Your Army</h3>
-          <div className="unit-cap-display">
-            <p>Total Units: {state.units.length}</p>
-          </div>
-          {state.units.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No units trained yet</p>
-          ) : (
-            <div className="unit-list">
-              {state.units.map((unit, index) => (
-                <div key={unit.id || index} className="unit-item">
-                  🗡️ {unit.type.replace('-', ' ')}
+
+        {/* Kingdom Tab */}
+        {activeTab === 'kingdom' && (
+          <>
+<div className="buildings">
+               {renderBuildingCard("Lumber-Camp")}
+               {renderBuildingCard("Farm")}
+               {renderBuildingCard("Quarry")}
+               {renderBuildingCard("Iron-Mine")}
+               {renderBuildingCard("Barracks")}
+               {renderBuildingCard("Warehouse")}
+               {renderBuildingCard("Granary")}
+             </div>
+          </>
+        )}
+
+        {/* Army Tab */}
+        {activeTab === 'army' && (
+          <>
+            {/* Unit Training Section */}
+            <div className="unit-training">
+              <h3>Unit Training</h3>
+              <div className="unit-cap-display">
+                <p title={`Base cap: ${BASE_UNIT_CAP}, +${UNIT_CAP_PER_BARRACKS_LEVEL} per Barracks level`}>
+                  Unit Cap: {state.units.length}/{unitCap}
+                </p>
+              </div>
+              
+              <div className="batch-training">
+                <div className="unit-selector">
+                  <label htmlFor="unit-type">Unit Type:</label>
+                  <select 
+                    id="unit-type"
+                    value="Peasant-Spear"
+                    onChange={() => {}}
+                    className="unit-type-select"
+                  >
+                    <option value="Peasant-Spear">Peasant Spear (10 Food, 5 Timber)</option>
+                  </select>
                 </div>
-              ))}
+                <div className="quantity-selector">
+                  <label htmlFor="quantity">Quantity:</label>
+                  <input
+                    id="quantity"
+                    type="number"
+                    min="1"
+                    max={Math.max(1, unitCap - state.units.length - state.unitQueue.length)}
+                    value={trainQuantity}
+                    onChange={(e) => setTrainQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="quantity-input"
+                  />
+                </div>
+                <button
+                  className="train-unit-button"
+                  onClick={() => handleTrainUnitsBatch("Peasant-Spear", trainQuantity)}
+                  disabled={state.units.length + state.unitQueue.length >= unitCap}
+                >
+                  🗡️ Train {trainQuantity} Peasant Spear
+                </button>
+              </div>
+
+              {/* Training Queue */}
+              <div className="training-queue">
+                <h4>Training Queue ({state.unitQueue.length})</h4>
+                {state.unitQueue.length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No units in training</p>
+                ) : (
+                  state.unitQueue.map((item, index) => {
+                    const progress = (item.progress / item.trainingTime) * 100;
+                    return (
+                      <div key={index} className="training-item">
+                        <span>{item.type}</span>
+                        <div className="training-progress">
+                          <div 
+                            className="training-progress-bar" 
+                            style={{ width: `${progress}%` }}
+                          ></div>
+                        </div>
+                        <span>{item.progress}/{item.trainingTime}s</span>
+                        <button
+                          className="cancel-training-button"
+                          onClick={() => handleCancelTraining(index)}
+                          title="Cancel training"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* Your Army Section */}
+            <div className="units">
+              <h3>Your Army</h3>
+              <div className="unit-cap-display">
+                <p>Total Units: {state.units.length}/{unitCap}</p>
+              </div>
+              
+              {state.units.length === 0 ? (
+                <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No units trained yet</p>
+              ) : (
+                <div className="unit-list">
+                  {state.units.map((unit) => (
+                    <div key={unit.id} className="unit-item">
+                      <span>🗡️ {unit.type.replace('-', ' ')}</span>
+                      <button
+                        className="dismiss-unit-button"
+                        onClick={() => handleDismissUnit(unit.id)}
+                        title="Dismiss this unit"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </main>
       <footer className="version-badge">
         {state.version}

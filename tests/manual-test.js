@@ -30,7 +30,6 @@ buildingNames.forEach(name => {
 console.log("\n=== Testing Dependency Gating ===");
 
 // Check Iron Mine dependency on Quarry Lv 2
-const quarryCard = document.querySelector('.building-card:has(h3:contains("Quarry"))');
 const ironMineCard = document.querySelector('.building-card:has(h3:contains("Iron-Mine"))');
 const ironMineButton = ironMineCard?.querySelector('button');
 
@@ -41,7 +40,6 @@ if (ironMineButton && ironMineButton.disabled) {
 }
 
 // Check Barracks dependency on Farm Lv 2
-const farmCard = document.querySelector('.building-card:has(h3:contains("Farm"))');
 const barracksCard = document.querySelector('.building-card:has(h3:contains("Barracks"))');
 const barracksButton = barracksCard?.querySelector('button');
 

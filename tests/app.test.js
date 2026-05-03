@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { gameReducer, initialState } from '../src/App.jsx';
+import { gameReducer } from '../src/constants/gameReducer.js';
+import { initialState } from '../src/constants/gameState.js';
 
 describe('Milestone 1 - Timber Resource System', () => {
   it('should start with 100 timber', () => {

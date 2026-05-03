@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import App, { initialState } from '../src/App.jsx';
+import App from '../src/App.jsx';
+import { initialState } from '../src/constants/gameState.js';
 
 // Mock localStorage
 const localStorageMock = {
@@ -139,8 +140,12 @@ describe('Integration Tests - End-to-End User Flows', () => {
       expect(screen.getByText('150')).toBeInTheDocument(); // 200 - 50 food
     });
 
-    // Step 4: Train Peasant Spear
-    const trainButton = screen.getByRole('button', { name: /train peasant spear/i });
+    // Step 4: Click the Army tab first
+    const armyTab = screen.getByRole('button', { name: /army/i });
+    fireEvent.click(armyTab);
+
+    // Train Peasant Spear
+    const trainButton = screen.getByRole('button', { name: /train.*peasant.*spear/i });
     fireEvent.click(trainButton);
 
     await waitFor(() => {
