@@ -47,6 +47,13 @@ export function gameReducer(state, action) {
         return updatedItem;
       }).filter(Boolean);
 
+      // Calculate and apply food consumption from units
+      const totalFoodConsumption = newUnits.reduce((total, unit) => {
+        const consumptionPerMinute = gameConstants.unitFoodConsumption[unit.type] || 0;
+        return total + (consumptionPerMinute / 60);
+      }, 0);
+      newResources.food = Math.max(0, newResources.food - totalFoodConsumption);
+
       return {
         ...state,
         resources: newResources,
@@ -286,6 +293,13 @@ export function gameReducer(state, action) {
         }
         return { ...item, progress: newProgress };
       }).filter(Boolean);
+
+      // Calculate and apply food consumption over offline period
+      const totalFoodConsumption = newUnits.reduce((total, unit) => {
+        const consumptionPerMinute = gameConstants.unitFoodConsumption[unit.type] || 0;
+        return total + (consumptionPerMinute / 60) * seconds;
+      }, 0);
+      newResources.food = Math.max(0, newResources.food - totalFoodConsumption);
 
       return {
         ...state,
