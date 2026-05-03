@@ -148,6 +148,10 @@
   animation: slideInFromRight 0.3s ease-out;
   position: relative;
   overflow: hidden;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .toast::before {
@@ -158,6 +162,28 @@
   right: 0;
   height: 3px;
   background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+}
+
+.toast-dismiss {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  font-size: 1rem;
+  line-height: 1;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.toast-dismiss:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.toast-dismiss:active {
+  transform: scale(0.95);
 }
 
 @keyframes slideInFromRight {

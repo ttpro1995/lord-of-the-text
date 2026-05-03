@@ -74,7 +74,11 @@ export function gameReducer(state, action) {
             type: updatedItem.type,
             id: Date.now() + Math.random()
           });
-          notifications.push(`Unit ready: ${updatedItem.type}`);
+          notifications.push({
+            id: `notif-${Date.now()}-${Math.random()}`,
+            message: `Unit ready: ${updatedItem.type}`,
+            timestamp: Date.now()
+          });
           return null; // Remove from queue
         }
         return updatedItem;
@@ -121,7 +125,11 @@ export function gameReducer(state, action) {
           newResources[resourceKey] -= cost;
         });
 
-        const notifications = [`${buildingName} complete`];
+        const newNotification = {
+          id: `notif-${Date.now()}-${Math.random()}`,
+          message: `${buildingName} complete`,
+          timestamp: Date.now()
+        };
 
         return {
           ...state,
@@ -130,7 +138,7 @@ export function gameReducer(state, action) {
             ...state.buildings,
             [buildingName]: nextLevel,
           },
-          notifications: notifications
+          notifications: [newNotification, ...state.notifications]
         };
       }
       if (!canAfford) {
@@ -208,7 +216,11 @@ export function gameReducer(state, action) {
             type: item.type,
             id: Date.now() + Math.random()
           });
-          notifications.push(`Unit ready: ${item.type}`);
+          notifications.push({
+            id: `notif-${Date.now()}-${Math.random()}`,
+            message: `Unit ready: ${item.type}`,
+            timestamp: Date.now()
+          });
           return null; // Remove from queue
         }
         return { ...item, progress: newProgress };
@@ -222,6 +234,11 @@ export function gameReducer(state, action) {
         notifications: notifications
       };
     }
+    case 'DISMISS_NOTIFICATION':
+      return {
+        ...state,
+        notifications: state.notifications.filter(n => n.id !== action.payload)
+      };
     case 'LOAD_STATE':
       return action.payload;
     default:
@@ -276,6 +293,24 @@ function App() {
     }, 1000);
     return () => clearInterval(interval);
   }, [state]);
+
+  // Auto-dismiss notifications after 5 seconds
+  useEffect(() => {
+    const timers = state.notifications.map(notification => {
+      return setTimeout(() => {
+        dispatch({ type: 'DISMISS_NOTIFICATION', payload: notification.id });
+      }, 5000);
+    });
+
+    return () => {
+      timers.forEach(timer => clearTimeout(timer));
+    };
+  }, [state.notifications]);
+
+  // Handler for manual dismiss
+  const handleDismissNotification = (notificationId) => {
+    dispatch({ type: 'DISMISS_NOTIFICATION', payload: notificationId });
+  };
 
 
   // Manual Save/Load functionality
@@ -485,9 +520,16 @@ function App() {
       </footer>
       {/* Toast Notifications */}
       <div className="toast-notifications">
-        {state.notifications.map((notification, index) => (
-          <div key={index} className="toast">
-            {notification}
+        {state.notifications.map((notification) => (
+          <div key={notification.id} className="toast">
+            <span>{notification.message}</span>
+            <button
+              className="toast-dismiss"
+              onClick={() => handleDismissNotification(notification.id)}
+              aria-label="Dismiss notification"
+            >
+              ✕
+            </button>
           </div>
         ))}
       </div>
