@@ -11,10 +11,10 @@ Lord of the Text uses a modern, dark-themed interface built with React and style
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Top Bar (Sticky)                        │
-│  ┌─────────────────────┐         ┌────────────────────────┐ │
-│  │ Game Title          │         │ Resource Display       │ │
-│  │ "Lord of the Text"  │         │ 7 resource icons       │ │
-│  └─────────────────────┘         └────────────────────────┘ │
+│  ┌─────────────────────────────────┐ ┌────────────────────┐ │
+│  │ Game Title + Settings Button    │ │ Resource Display   │ │
+│  │ "Lord of the Text" [⚙️ Settings]│ │ 6 resource icons   │ │
+│  └─────────────────────────────────┘ └────────────────────┘ │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │                    Main Content Area                        │
@@ -36,7 +36,7 @@ Lord of the Text uses a modern, dark-themed interface built with React and style
 │                                                             │
 ├─────────────────────────────────────────────────────────────┤
 │                    Toast Notifications                      │
-│                    Bottom-left version badge                │
+│                    (Fixed bottom-left version badge)        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -48,8 +48,8 @@ Lord of the Text uses a modern, dark-themed interface built with React and style
 
 **Elements**:
 - **Game Title**: "Lord of the Text – v0.3" with gradient text effect
-- **Settings Button**: ⚙️ icon, opens settings modal
-- **Resource Display**: Horizontal grid of resource cards
+- **Settings Button**: "⚙️ Settings" button positioned next to title, opens settings modal
+- **Resource Display**: Horizontal grid of resource cards positioned on the right
 
 **Resource Cards** (left to right):
 | Icon | Resource | Display |
@@ -60,9 +60,8 @@ Lord of the Text uses a modern, dark-themed interface built with React and style
 | F | Food | Current amount |
 | G | Gold | Current amount |
 | K | Knowledge | Current amount |
-| H | Faith | Current amount |
 
-Resource caps are shown as tooltip on hover when cap > 200.
+Resource caps are displayed as "/ {cap}" after the amount when cap > 200. Full tooltip shows resource name, current amount, and cap on hover.
 
 ### 2. Tab Navigation
 
@@ -116,10 +115,10 @@ Grid layout (responsive: 1-3 columns depending on screen width).
 
 **Unit Cap Display**:
 - Shows current/total units with tooltip explaining calculation
-- Formula: `BASE_UNIT_CAP + (Barracks Level × UNIT_CAP_PER_BARRACKS_LEVEL)`
+- Formula: `BASE_UNIT_CAP + (Barracks Level × UNIT_CAP_PER_BARRACKS_LEVEL)` (5 + (barracks level × 5))
 
 **Training Controls**:
-- **Unit Type Selector**: Dropdown (currently only Peasant Spear)
+- **Unit Type Selector**: Dropdown (currently only "Peasant Spear (10 Food, 5 Timber)")
 - **Quantity Input**: Number field (1-remaining cap)
 - **Train Button**: Initiates batch training
 
@@ -138,7 +137,7 @@ Grid layout (responsive: 1-3 columns depending on screen width).
 
 #### Settings Modal
 
- accessed via ⚙️ button or standard modal pattern:
+Accessed via "⚙️ Settings" button:
 - Game version display
 - Save instructions (S key / L key)
 - Danger zone with hard reset option
@@ -152,7 +151,7 @@ Appears when reset is triggered:
 
 ### 6. Toast Notifications
 
-**Position**: Fixed top-right corner
+**Position**: Fixed top-right corner (1rem from top/right, max-width 320px)
 
 **Behavior**:
 - Slide in from right on appear
@@ -168,6 +167,7 @@ Appears when reset is triggered:
 |----------|-------|-------|
 | `--primary-dark` | `#1a1b23` | Background gradient start |
 | `--secondary-dark` | `#252730` | Background gradient end |
+| `--tertiary-dark` | `#2f313c` | Additional dark surface |
 | `--surface` | `#353843` | Card backgrounds |
 | `--surface-light` | `#404354` | Hover states, inputs |
 | `--surface-hover` | `#4a4d62` | Button hover |
@@ -178,12 +178,14 @@ Appears when reset is triggered:
 | `--text-primary` | `#f8fafc` | Main text |
 | `--text-secondary` | `#cbd5e1` | Secondary text |
 | `--text-muted` | `#94a3b8` | Disabled/hint text |
+| `--border-subtle` | `rgba(148, 163, 184, 0.15)` | Subtle borders |
+| `--border-strong` | `rgba(148, 163, 184, 0.3)` | Strong borders |
 
 ## Responsive Breakpoints
 
 | Width | Changes |
 |-------|---------|
-| `&gt; 768px` | 3-column resource grid, 2-column building grid |
+| `> 768px` | Auto-fit resource grid (max 500px), auto-fit building grid (min 320px) |
 | `≤ 768px` | 3-column resource grid, 1-column building grid, stacked top bar |
 | `≤ 480px` | 2-column resource grid, compact padding |
 
