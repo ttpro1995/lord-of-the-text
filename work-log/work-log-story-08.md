@@ -43,8 +43,27 @@
 - ✅ Component architecture refactor complete
 
 ### Testing
-- All 21 existing tests pass
+- All 51 tests pass (including new unit training tests)
 - Build succeeds
+- Linter passes
+
+### Bug Investigation: "Limit 2/5 stuck" issue
+- **Root Cause Analysis**: The issue is NOT a bug but expected game behavior
+  - Initial state: 20 food, 100 timber
+  - Unit cost: 10 food, 5 timber
+  - Max affordable by food: 20/10 = 2 units
+  - After training 2 units: food drops to 0
+  - Without Farm: no food production
+  - Cannot train more units due to insufficient food
+  
+- **Fix Applied**: Added user-friendly message when food is insufficient
+  - Added "Need more food to train units" hint in UnitTraining.jsx
+  - Added tooltip on Train Max button explaining why it's disabled
+
+- **User Guidance**: To train more units, player needs to:
+  1. Build a Farm (requires timber/stone)
+  2. Wait for food production (Farm Lv1 = 3 food/min)
+  3. Then train more units
 
 ### Remaining Tasks
 - Visual feedback animations (slide-in numbers for resource changes)

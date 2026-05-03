@@ -17,6 +17,31 @@ export default function UnitTraining({
 
   const unitQueueCount = unitQueue.length;
 
+  // Calculate why training is disabled
+  const affordabilityInfo = useMemo(() => {
+    const missingResources = [];
+    
+    Object.entries(UNIT_COST).forEach(([resource, cost]) => {
+      const available = resources[resource] || 0;
+      if (available < cost) {
+        missingResources.push({ resource, needed: cost - available });
+      }
+    });
+    
+    const atCap = unitsCount + unitQueueCount >= unitCap;
+    
+    return {
+      canAfford: missingResources.length === 0,
+      missingResources,
+      atCap,
+      reason: atCap 
+        ? 'At unit cap' 
+        : missingResources.length > 0 
+          ? `Need: ${missingResources.map(m => `${m.needed} ${m.resource}`).join(', ')}`
+          : null
+    };
+  }, [resources, unitsCount, unitQueueCount, unitCap]);
+
   const maxAffordable = useMemo(() => {
     let maxByResources = Infinity;
     
@@ -43,13 +68,23 @@ export default function UnitTraining({
     }
   };
 
-  return (
+  const trainDisabled = trainQuantity <= 0 || !affordabilityInfo.canAfford || affordabilityInfo.atCap;
+
+return (
     <div className="unit-training">
       <h3>Unit Training</h3>
       <div className="unit-cap-display">
-        <p title={`Base cap: ${unitCap}, training queue counts toward cap`}>
+        <p title={`Training queue counts toward cap`}>
           Unit Cap: {unitsCount}/{unitCap}
         </p>
+        <p className="food-cost-display">
+          Food Cost: {UNIT_COST.food} (have {resources.food || 0})
+        </p>
+        {maxAffordable <= 0 && !affordabilityInfo.atCap && (
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontStyle: 'italic' }}>
+            Not enough resources to train
+          </p>
+        )}
       </div>
       
       <div className="batch-training">
@@ -61,8 +96,8 @@ export default function UnitTraining({
             disabled
             className="unit-type-select"
           >
-<option value="Peasant-Spear">
-               Peasant Spear ({Object.entries(UNIT_COST).map(([r, v]) => `${v} ${r.charAt(0).toUpperCase()}`).join(', ')})
+            <option value="Peasant-Spear">
+              Peasant Spear ({Object.entries(UNIT_COST).map(([r, v]) => `${v} ${r.charAt(0).toUpperCase()}`).join(', ')})
             </option>
           </select>
         </div>
@@ -74,7 +109,7 @@ export default function UnitTraining({
             min="1"
             max={maxAffordable}
             value={trainQuantity}
-            onChange={(e) => setTrainQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+            onChange={(e) => setTrainQuantity(Math.max(1, Math.min(maxAffordable, parseInt(e.target.value) || 1)))}
             className="quantity-input"
           />
         </div>
@@ -82,15 +117,16 @@ export default function UnitTraining({
           <button
             className="train-unit-button"
             onClick={handleTrain}
-            disabled={trainQuantity <= 0 || unitsCount + unitQueueCount >= unitCap}
+            disabled={trainDisabled}
+            title={affordabilityInfo.reason || "Train selected units"}
           >
             🗡️ Train {trainQuantity} Peasant Spear
           </button>
           <button
             className="train-max-button"
             onClick={handleTrainMax}
-            disabled={maxAffordable <= 0 || unitsCount + unitQueueCount >= unitCap}
-            title="Train maximum affordable units"
+            disabled={maxAffordable <= 0}
+            title={maxAffordable <= 0 ? affordabilityInfo.reason || "Not enough resources" : "Train maximum affordable units"}
           >
             📊 Train Max ({maxAffordable})
           </button>

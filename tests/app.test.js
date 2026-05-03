@@ -264,3 +264,143 @@ describe('Hard Reset Feature', () => {
     expect(resetState).toEqual(initialState);
   });
 });
+
+describe('Unit Training System', () => {
+  it('should train units in batch correctly', () => {
+    // Create state with enough resources for 5 units
+    const stateWithResources = {
+      ...initialState,
+      resources: {
+        ...initialState.resources,
+        timber: 100, // 5 timber * 5 units
+        food: 100    // 10 food * 5 units
+      },
+      buildings: {
+        ...initialState.buildings,
+        "Barracks": 0 // Unit cap = 5
+      }
+    };
+
+    // Train 5 units
+    const stateAfterTraining = gameReducer(stateWithResources, {
+      type: 'TRAIN_UNITS_BATCH',
+      payload: { unitType: 'Peasant-Spear', quantity: 5 }
+    });
+
+    // Verify queue has 5 units
+    expect(stateAfterTraining.unitQueue.length).toBe(5);
+    
+    // Verify resources were deducted correctly
+    expect(stateAfterTraining.resources.timber).toBe(100 - 5 * 5); // 75
+    expect(stateAfterTraining.resources.food).toBe(100 - 5 * 10); // 50
+  });
+
+  it('should not exceed unit cap when training', () => {
+    // Create state with 2 units already trained
+    const stateWithUnits = {
+      ...initialState,
+      resources: {
+        ...initialState.resources,
+        timber: 100,
+        food: 100
+      },
+      buildings: {
+        ...initialState.buildings,
+        "Barracks": 0 // Unit cap = 5
+      },
+      units: [{ type: 'Peasant-Spear', id: 1 }, { type: 'Peasant-Spear', id: 2 }],
+      unitQueue: []
+    };
+
+    // Try to train 4 more units (would exceed cap of 5 + 0 queue = 5)
+    const stateResult = gameReducer(stateWithUnits, {
+      type: 'TRAIN_UNITS_BATCH',
+      payload: { unitType: 'Peasant-Spear', quantity: 4 }
+    });
+
+    // Should be rejected - cap would be 2 + 0 + 4 = 6 > 5
+    expect(stateResult.unitQueue.length).toBe(0);
+  });
+
+  it('should allow training up to the remaining cap', () => {
+    // Create state with 2 units already trained
+    const stateWithUnits = {
+      ...initialState,
+      resources: {
+        ...initialState.resources,
+        timber: 100,
+        food: 100
+      },
+      buildings: {
+        ...initialState.buildings,
+        "Barracks": 0 // Unit cap = 5
+      },
+      units: [{ type: 'Peasant-Spear', id: 1 }, { type: 'Peasant-Spear', id: 2 }],
+      unitQueue: []
+    };
+
+    // Try to train 3 more units (exactly at cap: 2 + 0 + 3 = 5)
+    const stateResult = gameReducer(stateWithUnits, {
+      type: 'TRAIN_UNITS_BATCH',
+      payload: { unitType: 'Peasant-Spear', quantity: 3 }
+    });
+
+    // Should succeed - cap is exactly 5
+    expect(stateResult.unitQueue.length).toBe(3);
+  });
+
+  it('should process training queue and create units on TICK', () => {
+    // Create state with units in training
+    const stateWithQueue = {
+      ...initialState,
+      resources: {
+        ...initialState.resources,
+        timber: 50,
+        food: 50
+      },
+      buildings: {
+        ...initialState.buildings
+      },
+      units: [],
+      unitQueue: [
+        { type: 'Peasant-Spear', progress: 29, trainingTime: 30 }, // Will complete next tick
+        { type: 'Peasant-Spear', progress: 15, trainingTime: 30 }  // Will not complete
+      ]
+    };
+
+    // Process one tick
+    const stateAfterTick = gameReducer(stateWithQueue, { type: 'TICK' });
+
+    // First unit should be completed and removed from queue
+    expect(stateAfterTick.unitQueue.length).toBe(1);
+    expect(stateAfterTick.units.length).toBe(1);
+  });
+
+  it('should correctly calculate max affordable based on both resources and cap', () => {
+    // Scenario: User has 20 food, 100 timber, unit cap 5
+    // Unit costs: 10 food, 5 timber
+    // Max by food: 20/10 = 2
+    // Max by timber: 100/5 = 20
+    // Max by cap: 5
+    // Expected: min(2, 20, 5) = 2
+    
+    const state = {
+      ...initialState,
+      resources: { food: 20, timber: 100, stone: 100, iron: 20, gold: 20, knowledge: 20 },
+      buildings: { ...initialState.buildings }, // Barracks 0 = cap 5
+      units: [],
+      unitQueue: []
+    };
+
+    // Try to train 5 units - should fail due to insufficient resources
+    const result = gameReducer(state, { type: 'TRAIN_UNITS_BATCH', payload: { unitType: 'Peasant-Spear', quantity: 5 } });
+    
+    // Should return unchanged state because can't afford 5 units (need 50 food, have 20)
+    expect(result).toEqual(state);
+    
+    // Train 2 units - should succeed
+    const successResult = gameReducer(state, { type: 'TRAIN_UNITS_BATCH', payload: { unitType: 'Peasant-Spear', quantity: 2 } });
+    expect(successResult.unitQueue.length).toBe(2);
+    expect(successResult.resources.food).toBe(0); // 20 - 2*10 = 0
+  });
+});

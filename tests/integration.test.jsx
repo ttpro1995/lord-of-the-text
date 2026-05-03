@@ -162,6 +162,77 @@ describe('Integration Tests - End-to-End User Flows', () => {
     // So we assert the key integration points: resource deduction and queue addition
   });
 
+  it('should train multiple units in batch', async () => {
+    // Custom initial state with enough resources for 5 units
+    const customInitialState = {
+      ...initialState,
+      resources: {
+        ...initialState.resources,
+        timber: 100, // Enough for 20 units (5 timber each)
+        food: 100    // Enough for 10 units (10 food each)
+      },
+      buildings: {
+        ...initialState.buildings,
+        "Barracks": 0 // Unit cap = 5
+      }
+    };
+    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(customInitialState));
+
+    render(<App />);
+
+    await screen.findByText(/Lord of the Text/);
+
+    // Click the Army tab
+    const armyTab = screen.getByRole('button', { name: /army/i });
+    fireEvent.click(armyTab);
+
+    // Train Max should show 5 (limited by cap, not resources)
+    // With cap 5, food 100 (enough for 10), timber 100 (enough for 20)
+    // Max should be 5 due to cap
+    await waitFor(() => {
+      expect(screen.getByText(/Train Max \(5\)/i)).toBeInTheDocument();
+    });
+
+    // Click Train Max
+    const trainMaxButton = screen.getByRole('button', { name: /Train Max/i });
+    fireEvent.click(trainMaxButton);
+
+    await waitFor(() => {
+      // Should have queued 5 units, deducted 50 food and 25 timber
+      expect(screen.getByText('50')).toBeInTheDocument(); // 100 - 50 = 50 food
+      expect(screen.getByText('75')).toBeInTheDocument(); // 100 - 25 = 75 timber
+      expect(screen.getByText(/Training Queue \(5\)/i)).toBeInTheDocument();
+    });
+  });
+
+  it('should allow training units up to the unit cap', async () => {
+    // Test with initial state showing unit cap works correctly
+    const customInitialState = {
+      ...initialState,
+      resources: {
+        ...initialState.resources,
+        timber: 100,
+        food: 60   // Enough for 6 units
+      },
+      buildings: {
+        ...initialState.buildings,
+        "Barracks": 0 // Unit cap = 5
+      }
+    };
+    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(customInitialState));
+
+    render(<App />);
+    await screen.findByText(/Lord of the Text/);
+
+    // Click Army tab
+    fireEvent.click(screen.getByRole('button', { name: /army/i }));
+
+    // Train Max should show 5 (cap-limited, not resource-limited)
+    await waitFor(() => {
+      expect(screen.getByText(/Train Max \(5\)/i)).toBeInTheDocument();
+    });
+  });
+
   it('should show settings modal with danger zone', async () => {
     render(<App />);
 
