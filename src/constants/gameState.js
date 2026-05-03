@@ -1,3 +1,5 @@
+import buildingDefinitions from '../../data/building-definitions.json';
+
 export const initialState = {
   playerName: "Lord",
   resources: {
@@ -14,7 +16,8 @@ export const initialState = {
     "Quarry": 0,
     "Iron-Mine": 0,
     "Barracks": 0,
-    "Warehouse": 0
+    "Warehouse": 0,
+    "Granary": 0
   },
   units: [],
   unitQueue: [],
@@ -22,7 +25,7 @@ export const initialState = {
   version: "v0.3"
 };
 
-export const RESOURCE_CAPS = {
+export const BASE_RESOURCE_CAPS = {
   timber: 200,
   stone: 200,
   iron: 200,
@@ -30,3 +33,19 @@ export const RESOURCE_CAPS = {
   gold: 200,
   knowledge: 200
 };
+
+export function calculateResourceCap(baseResource, state) {
+  const baseCap = BASE_RESOURCE_CAPS[baseResource] || 200;
+  
+  if (baseResource === 'food') {
+    const granaryLevel = state.buildings["Granary"] || 0;
+    if (granaryLevel > 0) {
+      const granaryBonus = buildingDefinitions["Granary"][granaryLevel]?.storageBonus?.["food"] || 0;
+      return baseCap + granaryBonus;
+    }
+  }
+  
+  return baseCap;
+}
+
+export const RESOURCE_CAPS = BASE_RESOURCE_CAPS;
