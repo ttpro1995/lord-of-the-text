@@ -18,6 +18,8 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState('');
+  const [activeTab, setActiveTab] = useState('kingdom');
+  const [trainQuantity, setTrainQuantity] = useState(1);
   const stateRef = useRef(state);
   const notificationTimers = useRef(new Map()); // Track active timers by notification ID
 
@@ -130,13 +132,22 @@ function App() {
     const currentLevel = state.buildings[buildingName] || 0;
     if (currentLevel === 0) {
       dispatch({ type: 'BUILD', payload: buildingName });
-    } else {
-      dispatch({ type: 'UPGRADE', payload: buildingName });
-    }
+} else {
+       dispatch({ type: 'UPGRADE', payload: buildingName });
+     }
   };
 
-  const handleTrainUnit = (unitType) => {
-    dispatch({ type: 'TRAIN_UNIT', payload: { unitType } });
+  const handleTrainUnitsBatch = (unitType, quantity) => {
+    if (quantity <= 0) return;
+    dispatch({ type: 'TRAIN_UNITS_BATCH', payload: { unitType, quantity } });
+  };
+
+  const handleCancelTraining = (queueIndex) => {
+    dispatch({ type: 'CANCEL_TRAINING', payload: { queueIndex } });
+  };
+
+  const handleDismissUnit = (unitId) => {
+    dispatch({ type: 'DISMISS_UNIT', payload: { unitId } });
   };
 
   const handleHardResetClick = () => {
@@ -244,68 +255,142 @@ function App() {
       </header>
       <main className="game-content">
         <p>Welcome, {state.playerName}!</p>
-        <div className="buildings">
-          {renderBuildingCard("Lumber-Camp")}
-          {renderBuildingCard("Farm")}
-          {renderBuildingCard("Quarry")}
-          {renderBuildingCard("Iron-Mine")}
-          {renderBuildingCard("Barracks")}
-          {renderBuildingCard("Warehouse")}
-        </div>
-        <div className="unit-training">
-          <h3>Unit Training</h3>
-          <div className="unit-cap-display">
-            <p title={`Base cap: ${BASE_UNIT_CAP}, +${UNIT_CAP_PER_BARRACKS_LEVEL} per Barracks level`}>
-              Unit Cap: {state.units.length}/{unitCap}
-            </p>
-          </div>
-          <button
-            className="train-unit-button"
-            onClick={() => handleTrainUnit("Peasant-Spear")}
-            disabled={state.units.length >= unitCap}
+        
+        {/* Tab Navigation */}
+        <div className="tab-navigation">
+          <button 
+            className={`tab-button ${activeTab === 'kingdom' ? 'active' : ''}`}
+            onClick={() => setActiveTab('kingdom')}
           >
-            🗡️ Train Peasant Spear (10 Food, 5 Timber)
+            🏰 Kingdom
           </button>
-          <div className="training-queue">
-            <h4>Training Queue ({state.unitQueue.length})</h4>
-            {state.unitQueue.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No units in training</p>
-            ) : (
-              state.unitQueue.map((item, index) => {
-                const progress = (item.progress / item.trainingTime) * 100;
-                return (
-                  <div key={index} className="training-item">
-                    <span>{item.type}</span>
-                    <div className="training-progress">
-                      <div 
-                        className="training-progress-bar" 
-                        style={{ width: `${progress}%` }}
-                      ></div>
-                    </div>
-                    <span>{item.progress}/{item.trainingTime}s</span>
-                  </div>
-                );
-              })
-            )}
-          </div>
+          <button 
+            className={`tab-button ${activeTab === 'army' ? 'active' : ''}`}
+            onClick={() => setActiveTab('army')}
+          >
+            ⚔️ Army
+          </button>
         </div>
-        <div className="units">
-          <h3>Your Army</h3>
-          <div className="unit-cap-display">
-            <p>Total Units: {state.units.length}</p>
-          </div>
-          {state.units.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No units trained yet</p>
-          ) : (
-            <div className="unit-list">
-              {state.units.map((unit, index) => (
-                <div key={unit.id || index} className="unit-item">
-                  🗡️ {unit.type.replace('-', ' ')}
-                </div>
-              ))}
+
+        {/* Kingdom Tab */}
+        {activeTab === 'kingdom' && (
+          <>
+            <div className="buildings">
+              {renderBuildingCard("Lumber-Camp")}
+              {renderBuildingCard("Farm")}
+              {renderBuildingCard("Quarry")}
+              {renderBuildingCard("Iron-Mine")}
+              {renderBuildingCard("Barracks")}
+              {renderBuildingCard("Warehouse")}
             </div>
-          )}
-        </div>
+          </>
+        )}
+
+        {/* Army Tab */}
+        {activeTab === 'army' && (
+          <>
+            {/* Unit Training Section */}
+            <div className="unit-training">
+              <h3>Unit Training</h3>
+              <div className="unit-cap-display">
+                <p title={`Base cap: ${BASE_UNIT_CAP}, +${UNIT_CAP_PER_BARRACKS_LEVEL} per Barracks level`}>
+                  Unit Cap: {state.units.length}/{unitCap}
+                </p>
+              </div>
+              
+              <div className="batch-training">
+                <div className="unit-selector">
+                  <label htmlFor="unit-type">Unit Type:</label>
+                  <select 
+                    id="unit-type"
+                    value="Peasant-Spear"
+                    onChange={() => {}}
+                    className="unit-type-select"
+                  >
+                    <option value="Peasant-Spear">Peasant Spear (10 Food, 5 Timber)</option>
+                  </select>
+                </div>
+                <div className="quantity-selector">
+                  <label htmlFor="quantity">Quantity:</label>
+                  <input
+                    id="quantity"
+                    type="number"
+                    min="1"
+                    max={Math.max(1, unitCap - state.units.length - state.unitQueue.length)}
+                    value={trainQuantity}
+                    onChange={(e) => setTrainQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="quantity-input"
+                  />
+                </div>
+                <button
+                  className="train-unit-button"
+                  onClick={() => handleTrainUnitsBatch("Peasant-Spear", trainQuantity)}
+                  disabled={state.units.length + state.unitQueue.length >= unitCap}
+                >
+                  🗡️ Train {trainQuantity} Peasant Spear
+                </button>
+              </div>
+
+              {/* Training Queue */}
+              <div className="training-queue">
+                <h4>Training Queue ({state.unitQueue.length})</h4>
+                {state.unitQueue.length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No units in training</p>
+                ) : (
+                  state.unitQueue.map((item, index) => {
+                    const progress = (item.progress / item.trainingTime) * 100;
+                    return (
+                      <div key={index} className="training-item">
+                        <span>{item.type}</span>
+                        <div className="training-progress">
+                          <div 
+                            className="training-progress-bar" 
+                            style={{ width: `${progress}%` }}
+                          ></div>
+                        </div>
+                        <span>{item.progress}/{item.trainingTime}s</span>
+                        <button
+                          className="cancel-training-button"
+                          onClick={() => handleCancelTraining(index)}
+                          title="Cancel training"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Your Army Section */}
+            <div className="units">
+              <h3>Your Army</h3>
+              <div className="unit-cap-display">
+                <p>Total Units: {state.units.length}/{unitCap}</p>
+              </div>
+              
+              {state.units.length === 0 ? (
+                <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No units trained yet</p>
+              ) : (
+                <div className="unit-list">
+                  {state.units.map((unit) => (
+                    <div key={unit.id} className="unit-item">
+                      <span>🗡️ {unit.type.replace('-', ' ')}</span>
+                      <button
+                        className="dismiss-unit-button"
+                        onClick={() => handleDismissUnit(unit.id)}
+                        title="Dismiss this unit"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </main>
       <footer className="version-badge">
         {state.version}

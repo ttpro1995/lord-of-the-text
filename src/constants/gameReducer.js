@@ -135,12 +135,13 @@ export function gameReducer(state, action) {
         newResources[resource] -= cost;
       });
 
+      const trainingTime = gameConstants.unitTrainingTimes[unitType] || 30;
       const newUnitQueue = [
         ...state.unitQueue,
         {
           type: unitType,
           progress: 0,
-          trainingTime: 30 // 30 seconds for Peasant Spear
+          trainingTime
         }
       ];
 
@@ -148,6 +149,102 @@ export function gameReducer(state, action) {
         ...state,
         resources: newResources,
         unitQueue: newUnitQueue
+      };
+    }
+    case 'TRAIN_UNITS_BATCH': {
+      const { unitType, quantity } = action.payload;
+      const unitCost = gameConstants.unitCosts[unitType];
+      const trainingTime = gameConstants.unitTrainingTimes[unitType] || 30;
+
+      if (!unitCost || quantity <= 0) return state;
+
+      // Calculate total cost for all units
+      const totalCost = {};
+      Object.entries(unitCost).forEach(([resource, cost]) => {
+        totalCost[resource] = cost * quantity;
+      });
+
+      const canAffordBatch = Object.entries(totalCost).every(
+        ([resource, cost]) => state.resources[resource] >= cost
+      );
+
+      if (!canAffordBatch) return state;
+
+      const barracksLevel = state.buildings["Barracks"] || 0;
+      const unitCap = BASE_UNIT_CAP + (barracksLevel * UNIT_CAP_PER_BARRACKS_LEVEL);
+
+      // Check total units (trained + in queue + new batch) against cap
+      if (state.units.length + state.unitQueue.length + quantity > unitCap) {
+        return state;
+      }
+
+      const newResources = { ...state.resources };
+      Object.entries(totalCost).forEach(([resource, cost]) => {
+        newResources[resource] -= cost;
+      });
+
+      const newUnitQueue = [...state.unitQueue];
+      for (let i = 0; i < quantity; i++) {
+        newUnitQueue.push({
+          type: unitType,
+          progress: 0,
+          trainingTime
+        });
+      }
+
+      return {
+        ...state,
+        resources: newResources,
+        unitQueue: newUnitQueue
+      };
+    }
+    case 'CANCEL_TRAINING': {
+      const { queueIndex } = action.payload;
+      const item = state.unitQueue[queueIndex];
+      if (!item) return state;
+
+      // Refund resources
+      const unitCost = gameConstants.unitCosts[item.type];
+      const newResources = { ...state.resources };
+      if (unitCost) {
+        Object.entries(unitCost).forEach(([resource, cost]) => {
+          newResources[resource] += cost;
+        });
+      }
+
+      const newUnitQueue = state.unitQueue.filter((_, index) => index !== queueIndex);
+
+      return {
+        ...state,
+        resources: newResources,
+        unitQueue: newUnitQueue
+      };
+    }
+    case 'DISMISS_UNIT': {
+      const { unitId } = action.payload;
+      const unitIndex = state.units.findIndex(u => u.id === unitId);
+      if (unitIndex === -1) return state;
+
+      const newUnits = state.units.filter(u => u.id !== unitId);
+
+      return {
+        ...state,
+        units: newUnits
+      };
+    }
+    case 'DISMISS_UNITS': {
+      const { unitType, count } = action.payload;
+      if (count <= 0) return state;
+
+      const matchingUnits = state.units.filter(u => u.type === unitType);
+      const toDismiss = Math.min(count, matchingUnits.length);
+
+      const unitsToKeep = state.units.filter(u => u.type !== unitType);
+      const newUnits = [...unitsToKeep, ...matchingUnits.slice(toDismiss)];
+
+      return {
+        ...state,
+        units: newUnits
       };
     }
     case 'OFFLINE_PROGRESS': {
