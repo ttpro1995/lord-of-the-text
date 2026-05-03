@@ -6,20 +6,22 @@ const UNIT_COST = gameConstants.unitCosts["Peasant-Spear"] || { food: 10, timber
 export default function UnitTraining({
   unitCap,
   unitsCount,
-  unitQueueCount,
+  unitQueue,
   resources,
   onTrainUnits,
-  onTrainMax
+  onTrainMax,
+  onCancelTraining
 }) {
   const [trainQuantity, setTrainQuantity] = useState(1);
   const unitType = 'Peasant-Spear';
+
+  const unitQueueCount = unitQueue.length;
 
   const maxAffordable = useMemo(() => {
     let maxByResources = Infinity;
     
     Object.entries(UNIT_COST).forEach(([resource, cost]) => {
-      const resourceKey = resource.toLowerCase();
-      const available = resources[resourceKey] || 0;
+      const available = resources[resource] || 0;
       const affordable = Math.floor(available / cost);
       maxByResources = Math.min(maxByResources, affordable);
     });
@@ -101,7 +103,30 @@ export default function UnitTraining({
         {unitQueueCount === 0 ? (
           <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No units in training</p>
         ) : (
-          <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Units are training...</p>
+          unitQueue.map((item, index) => {
+            const progress = (item.progress / item.trainingTime) * 100;
+            return (
+              <div key={index} className="training-item">
+                <span>{item.type.replace('-', ' ')}</span>
+                <div className="training-progress">
+                  <div 
+                    className="training-progress-bar" 
+                    style={{ width: `${progress}%` }}
+                  ></div>
+                </div>
+                <span>{item.progress}/{item.trainingTime}s</span>
+                {onCancelTraining && (
+                  <button
+                    className="cancel-training-button"
+                    onClick={() => onCancelTraining(index)}
+                    title="Cancel training"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            );
+          })
         )}
       </div>
     </div>

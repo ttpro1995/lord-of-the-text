@@ -176,17 +176,17 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'army' && (
-          <>
-            <UnitTraining
-              unitCap={unitCap}
-              unitsCount={state.units.length}
-              unitQueueCount={state.unitQueue.length}
-              resources={state.resources}
-              onTrainUnits={handleTrainUnits}
-              onCancelTraining={handleCancelTraining}
-              onTrainMax={handleTrainMax}
-            />
+{activeTab === 'army' && (
+           <>
+             <UnitTraining
+               unitCap={unitCap}
+               unitsCount={state.units.length}
+               unitQueue={state.unitQueue}
+               resources={state.resources}
+               onTrainUnits={handleTrainUnits}
+               onCancelTraining={handleCancelTraining}
+               onTrainMax={handleTrainMax}
+             />
             <ArmyDisplay
               units={state.units}
               unitCap={unitCap}
