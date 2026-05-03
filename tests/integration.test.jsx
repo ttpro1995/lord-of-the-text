@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import App, { initialState } from '../src/App.jsx';
+import App from '../src/App.jsx';
+import { initialState } from '../src/constants/gameState.js';
 
 // Mock localStorage
 const localStorageMock = {
