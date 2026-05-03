@@ -65,8 +65,8 @@ describe('Integration Tests - End-to-End User Flows', () => {
     expect(screen.getByText('Lumber Camp')).toBeInTheDocument();
     expect(screen.getByText('Lv 1')).toBeInTheDocument();
 
-    // Check for build notification
-    expect(screen.getByText(/lumber-camp complete/i)).toBeInTheDocument();
+    // Check for build notification (use getAllBy since notifications accumulate)
+    expect(screen.getAllByText(/lumber-camp complete/i)).toHaveLength(1);
 
     // Find and click upgrade button for Lumber-Camp (button text is "Upgrade to Lv 2 (100 T, 60 S)")
     const upgradeButton = screen.getByRole('button', { name: /upgrade.*lv 2.*100 T.*60 S/i });
@@ -82,8 +82,8 @@ describe('Integration Tests - End-to-End User Flows', () => {
     expect(screen.getByText('Lumber Camp')).toBeInTheDocument();
     expect(screen.getByText('Lv 2')).toBeInTheDocument();
 
-    // Check for upgrade notification
-    expect(screen.getByText(/lumber-camp complete/i)).toBeInTheDocument();
+    // Check for upgrade notification (should have 2 now: build + upgrade)
+    expect(screen.getAllByText(/lumber-camp complete/i)).toHaveLength(2);
   });
 
   it('should complete a unit training cycle', async () => {
@@ -321,4 +321,177 @@ describe('Integration Tests - End-to-End User Flows', () => {
       expect(screen.queryByText('Settings')).not.toBeInTheDocument();
     });
   });
+
+  it('should show notification when building completes', async () => {
+    const customInitialState = {
+      ...initialState,
+      resources: {
+        ...initialState.resources,
+        timber: 300,
+        stone: 200
+      }
+    };
+    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(customInitialState));
+
+    render(<App />);
+    await screen.findByText(/Lord of the Text/);
+
+    // Build Lumber-Camp
+    const buildButton = screen.getByRole('button', { name: /build.*50 T.*30 S/i });
+    fireEvent.click(buildButton);
+
+    // Check notification appears with message
+    await waitFor(() => {
+      expect(screen.getByText(/lumber-camp complete/i)).toBeInTheDocument();
+    });
+  });
+
+  it('should dismiss notification when clicking X button', async () => {
+    const customInitialState = {
+      ...initialState,
+      resources: {
+        ...initialState.resources,
+        timber: 300,
+        stone: 200
+      }
+    };
+    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(customInitialState));
+
+    render(<App />);
+    await screen.findByText(/Lord of the Text/);
+
+    // Build Lumber-Camp to create notification
+    const buildButton = screen.getByRole('button', { name: /build.*50 T.*30 S/i });
+    fireEvent.click(buildButton);
+
+    // Wait for notification to appear
+    await screen.findByText(/lumber-camp complete/i);
+
+    // Click dismiss button (X) immediately
+    const dismissButton = screen.getByRole('button', { name: /dismiss notification/i });
+    fireEvent.click(dismissButton);
+
+    // Verify notification is gone (should be immediate)
+    expect(screen.queryByText(/lumber-camp complete/i)).not.toBeInTheDocument();
+  });
+
+  it('should auto-dismiss notification after 5 seconds', async () => {
+    const customInitialState = {
+      ...initialState,
+      resources: {
+        ...initialState.resources,
+        timber: 300,
+        stone: 200
+      }
+    };
+    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(customInitialState));
+
+    // Use fake timers for testing setTimeout
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+
+    try {
+      render(<App />);
+      await screen.findByText(/Lord of the Text/);
+
+      // Build Lumber-Camp to create notification
+      const buildButton = screen.getByRole('button', { name: /build.*50 T.*30 S/i });
+      fireEvent.click(buildButton);
+
+      // Wait for notification to appear
+      await screen.findByText(/lumber-camp complete/i);
+
+      // Verify notification is present before auto-dismiss
+      expect(screen.getByText(/lumber-camp complete/i)).toBeInTheDocument();
+
+      // Fast-forward time by 5.5 seconds (slightly more than 5 to ensure dismiss fires)
+      await vi.advanceTimersByTimeAsync(5500);
+
+      // Verify notification is auto-dismissed
+      expect(screen.queryByText(/lumber-camp complete/i)).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  }, 10000);
+
+  it('should show new notifications at the top', async () => {
+    const customInitialState = {
+      ...initialState,
+      resources: {
+        ...initialState.resources,
+        timber: 600,
+        stone: 400
+      }
+    };
+    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(customInitialState));
+
+    // Use fake timers to control timing
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+
+    try {
+      render(<App />);
+      await screen.findByText(/Lord of the Text/);
+
+      // Build Farm
+      const farmButton = screen.getByRole('button', { name: /build.*40 T.*20 S/i });
+      fireEvent.click(farmButton);
+
+      // Build Lumber-Camp immediately after (should appear at top)
+      const lumberButton = screen.getByRole('button', { name: /build.*50 T.*30 S/i });
+      fireEvent.click(lumberButton);
+
+      // Wait for notifications to appear
+      await screen.findByText(/lumber-camp complete/i);
+      await screen.findByText(/farm complete/i);
+
+      // Verify the order: Lumber-Camp (newest) should appear before Farm (older)
+      const notifications = screen.getAllByRole('button', { name: /dismiss notification/i });
+      expect(notifications).toHaveLength(2);
+      // The first notification element should contain "Lumber-Camp complete" (most recent)
+      expect(notifications[0].closest('.toast')).toHaveTextContent(/lumber-camp complete/i);
+    } finally {
+      vi.useRealTimers();
+    }
+  }, 10000);
+
+  it('should handle multiple notifications with independent dismiss', async () => {
+    const customInitialState = {
+      ...initialState,
+      resources: {
+        ...initialState.resources,
+        timber: 600,
+        stone: 400
+      }
+    };
+    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(customInitialState));
+
+    // Use fake timers to control timing
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+
+    try {
+      render(<App />);
+      await screen.findByText(/Lord of the Text/);
+
+      // Build Farm first
+      const farmButton = screen.getByRole('button', { name: /build.*40 T.*20 S/i });
+      fireEvent.click(farmButton);
+
+      // Build Lumber-Camp second (should be at top)
+      const lumberButton = screen.getByRole('button', { name: /build.*50 T.*30 S/i });
+      fireEvent.click(lumberButton);
+
+      // Wait for notifications to appear
+      await screen.findByText(/lumber-camp complete/i);
+      await screen.findByText(/farm complete/i);
+
+      // Dismiss the top (most recent) notification
+      const dismissButtons = screen.getAllByRole('button', { name: /dismiss notification/i });
+      fireEvent.click(dismissButtons[0]);
+
+      // Verify Lumber-Camp notification is gone, Farm remains
+      expect(screen.queryByText(/lumber-camp complete/i)).not.toBeInTheDocument();
+      expect(screen.getByText(/farm complete/i)).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  }, 10000);
 });
