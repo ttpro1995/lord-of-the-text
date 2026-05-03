@@ -13,6 +13,7 @@ Lord of the Text is an incremental base-building game where you manage a kingdom
 - **Technology Research**: Invest in knowledge to unlock technologies that enhance production, military strength, and strategic options.
 - **Idle Mechanics**: Resources accumulate automatically with auto-save functionality allowing offline progress.
 - **Random Events**: Respond to dynamic events that can boost production or pose challenges requiring strategic decisions.
+- **Notifications**: Toast-style notifications with auto-dismiss and manual controls for game events.
 
 ## Core Gameplay Loop
 
@@ -80,3 +81,30 @@ Key elements:
 Offline Progress:
 - Resources continue to accumulate when the game is closed (capped by storage limits)
 - Progress is saved automatically to localStorage
+
+## Notifications System
+
+### Overview
+The game uses a toast-style notification system to inform players of important events such as building completions and unit training completions.
+
+### Behavior
+- **Auto-Dismiss**: Notifications automatically disappear after 5 seconds
+- **Ordering**: New notifications appear at the top of the list, pushing older notifications down
+- **Manual Dismiss**: Each notification has an 'X' button for immediate removal
+- **Positioning**: Notifications are displayed in the top-right corner of the screen
+
+### Notification Types
+- **Building Complete**: Triggered when a building is constructed or upgraded
+- **Unit Ready**: Triggered when a unit finishes training (including during offline progress)
+
+### Technical Details
+- Each notification has a unique ID for individual management
+- Notifications include a timestamp for tracking
+- Auto-dismiss uses setTimeout with proper cleanup to prevent memory leaks
+- Manual dismiss immediately removes the notification from state
+
+### User Experience
+- Visual feedback with slide-in animation from the right
+- Clear visual hierarchy with gradient accent bar at the top
+- Hover effects on dismiss button for better interactivity
+- Accessible with proper ARIA labels on dismiss buttons
