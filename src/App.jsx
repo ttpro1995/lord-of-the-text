@@ -1,7 +1,7 @@
 import { useReducer, useEffect, useState, useRef } from 'react';
 import './App.css';
 import buildingDefinitions from '../data/building-definitions.json';
-import { initialState, RESOURCE_CAPS } from './constants/gameState.js';
+import { initialState, calculateResourceCap } from './constants/gameState.js';
 import { BASE_UNIT_CAP, UNIT_CAP_PER_BARRACKS_LEVEL } from './constants/unitConstants.js';
 import { gameReducer } from './constants/gameReducer.js';
 
@@ -244,14 +244,20 @@ function App() {
             ⚙️ Settings
           </button>
         </div>
-        <div className="resources">
-          {Object.entries(state.resources).map(([resource, amount]) => (
-            <div key={resource} className="resource">
-              <span className="resource-icon">{resource.charAt(0).toUpperCase()}</span>
-              <span className="resource-amount">{Math.floor(amount)}</span>
-            </div>
-          ))}
-        </div>
+<div className="resources">
+           {Object.entries(state.resources).map(([resource, amount]) => {
+             const cap = calculateResourceCap(resource, state);
+             return (
+               <div key={resource} className="resource" title={`${resource.charAt(0).toUpperCase() + resource.slice(1)}: ${Math.floor(amount)}/${cap}`}>
+                 <span className="resource-icon">{resource.charAt(0).toUpperCase()}</span>
+                 <span className="resource-amount">{Math.floor(amount)}</span>
+                 {cap > 200 && (
+                   <span className="resource-cap">/ {cap}</span>
+                 )}
+               </div>
+             );
+           })}
+         </div>
       </header>
       <main className="game-content">
         <p>Welcome, {state.playerName}!</p>
@@ -275,14 +281,15 @@ function App() {
         {/* Kingdom Tab */}
         {activeTab === 'kingdom' && (
           <>
-            <div className="buildings">
-              {renderBuildingCard("Lumber-Camp")}
-              {renderBuildingCard("Farm")}
-              {renderBuildingCard("Quarry")}
-              {renderBuildingCard("Iron-Mine")}
-              {renderBuildingCard("Barracks")}
-              {renderBuildingCard("Warehouse")}
-            </div>
+<div className="buildings">
+               {renderBuildingCard("Lumber-Camp")}
+               {renderBuildingCard("Farm")}
+               {renderBuildingCard("Quarry")}
+               {renderBuildingCard("Iron-Mine")}
+               {renderBuildingCard("Barracks")}
+               {renderBuildingCard("Warehouse")}
+               {renderBuildingCard("Granary")}
+             </div>
           </>
         )}
 

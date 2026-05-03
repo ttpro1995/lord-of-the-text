@@ -1,6 +1,6 @@
 import buildingDefinitions from '../../data/building-definitions.json';
 import gameConstants from '../data/game-constants.json';
-import { initialState, RESOURCE_CAPS } from './gameState.js';
+import { initialState, BASE_RESOURCE_CAPS, calculateResourceCap } from './gameState.js';
 import { BASE_UNIT_CAP, UNIT_CAP_PER_BARRACKS_LEVEL } from './unitConstants.js';
 
 // Reducer function
@@ -18,7 +18,7 @@ export function gameReducer(state, action) {
           Object.entries(production).forEach(([resource, amount]) => {
             const amountPerTick = amount / 60;
             newResources[resource] = Math.min(
-              RESOURCE_CAPS[resource],
+              calculateResourceCap(resource, state),
               newResources[resource] + amountPerTick
             );
           });
@@ -254,20 +254,20 @@ export function gameReducer(state, action) {
       let newUnitQueue = [...state.unitQueue];
       let notifications = [...state.notifications]; // Copy any existing notifications
 
-      // Calculate resource production over offline period
-      Object.entries(state.buildings).forEach(([buildingName, level]) => {
-        if (level > 0 && buildingDefinitions[buildingName]) {
-          const production = buildingDefinitions[buildingName][level].production || {};
-          Object.entries(production).forEach(([resource, amountPerMinute]) => {
-            const amountPerSecond = amountPerMinute / 60;
-            const totalGain = amountPerSecond * seconds;
-            newResources[resource] = Math.min(
-              RESOURCE_CAPS[resource],
-              newResources[resource] + totalGain
-            );
-          });
-        }
-      });
+// Calculate resource production over offline period
+       Object.entries(state.buildings).forEach(([buildingName, level]) => {
+         if (level > 0 && buildingDefinitions[buildingName]) {
+           const production = buildingDefinitions[buildingName][level].production || {};
+           Object.entries(production).forEach(([resource, amountPerMinute]) => {
+             const amountPerSecond = amountPerMinute / 60;
+             const totalGain = amountPerSecond * seconds;
+             newResources[resource] = Math.min(
+               calculateResourceCap(resource, state),
+               newResources[resource] + totalGain
+             );
+           });
+         }
+       });
 
       // Advance unit training queue over offline period
       newUnitQueue = newUnitQueue.map(item => {

@@ -211,5 +211,43 @@
       "production": {},
       "dependencies": []
     }
+  },
+  "Granary": {
+    "1": {
+      "cost": {
+        "timber": 60,
+        "stone": 40,
+        "food": 20
+      },
+      "production": {},
+      "storageBonus": {
+        "food": 100
+      },
+      "dependencies": []
+    },
+    "2": {
+      "cost": {
+        "timber": 120,
+        "stone": 80,
+        "food": 40
+      },
+      "production": {},
+      "storageBonus": {
+        "food": 200
+      },
+      "dependencies": []
+    },
+    "3": {
+      "cost": {
+        "timber": 240,
+        "stone": 160,
+        "food": 80
+      },
+      "production": {},
+      "storageBonus": {
+        "food": 300
+      },
+      "dependencies": []
+    }
   }
 }
