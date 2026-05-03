@@ -983,3 +983,140 @@
 .dismiss-unit-button:hover {
   background: rgba(239, 68, 68, 0.1);
 }
+
+/* Resource Rate Display */
+.resource-rate {
+  font-size: 0.7rem;
+  color: var(--accent-secondary);
+  margin-left: 0.25rem;
+}
+
+.resource-animating .resource-amount {
+  animation: pulse 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* Training Buttons */
+.training-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.train-max-button {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: white;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: var(--transition);
+  flex: 1;
+}
+
+.train-max-button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.train-max-button:disabled {
+  background: var(--surface-light);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Bulk Actions */
+.bulk-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.bulk-dismiss-button,
+.clear-selection-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.bulk-dismiss-button {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--accent-danger);
+  border: 1px solid var(--accent-danger);
+}
+
+.bulk-dismiss-button:hover {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+.clear-selection-button {
+  background: var(--surface-light);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+}
+
+.clear-selection-button:hover {
+  background: var(--surface-hover);
+}
+
+.unit-item.selected {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: var(--accent-primary);
+}
+
+/* Mobile Touch Improvements */
+@media (max-width: 768px) {
+  .unit-item {
+    min-height: 44px;
+    padding: 1rem;
+  }
+  
+  .tab-button {
+    min-height: 44px;
+    font-size: 0.95rem;
+  }
+  
+  .building-card button {
+    min-height: 44px;
+    font-size: 1rem;
+  }
+  
+  .train-unit-button,
+  .train-max-button,
+  .settings-button {
+    min-height: 44px;
+    font-size: 1rem;
+  }
+  
+  .quantity-input,
+  .unit-type-select {
+    min-height: 44px;
+    font-size: 1rem;
+  }
+}
+
+/* Focus Styles for Keyboard Navigation */
+.building-card button:focus,
+.tab-button:focus,
+.train-unit-button:focus,
+.train-max-button:focus,
+.settings-button:focus {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.tab-button:focus:not(.active) {
+  box-shadow: 0 0 0 2px var(--accent-primary);
+}
