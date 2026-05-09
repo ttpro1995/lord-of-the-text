@@ -1,14 +1,16 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
+
+const TABS_CONFIG = [
+  { id: 'kingdom', label: '🏰 Kingdom' },
+  { id: 'army', label: '⚔️ Army' }
+];
 
 export default function TabNavigation({ activeTab, onTabChange }) {
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
   const { selection } = useHapticFeedback();
-  const tabs = [
-    { id: 'kingdom', label: '🏰 Kingdom' },
-    { id: 'army', label: '⚔️ Army' }
-  ];
+  const tabs = useMemo(() => TABS_CONFIG, []);
 
   // Minimum swipe distance
   const minSwipeDistance = 50;

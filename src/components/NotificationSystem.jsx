@@ -23,8 +23,9 @@ export default function NotificationSystem({ notifications, onDismiss }) {
   }, [notifications, onDismiss]);
 
   useEffect(() => {
+    const timers = notificationTimers.current;
     return () => {
-      notificationTimers.current.forEach(timer => clearTimeout(timer));
+      timers.forEach(timer => clearTimeout(timer));
     };
   }, []);
 
