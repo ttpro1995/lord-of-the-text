@@ -381,11 +381,5 @@ const { selectedItems, toggleSelect, selectRange, clearSelection } = useMultiSel
 - [x] Integrated haptic feedback across BuildingCard, ArmyDisplay, TabNavigation
 
 **Remaining Tasks:**
-- [ ] Loading skeleton states during training/building actions
 - [ ] Manual accessibility testing with screen reader
 - [ ] Manual mobile testing for swipe gestures
-
-**Completed Tasks (Just Added):**
-- [x] Visual animations with slide-up number indicators (resource changes)
-- [x] Haptic feedback for mobile interactions
-- [x] Full accessibility support with ARIA labels, roles, and screen reader support
