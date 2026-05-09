@@ -1156,6 +1156,67 @@
   animation: pulse 0.5s ease-in-out;
 }
 
+/* Button press feedback */
+.building-card button.pressing {
+  transform: scale(0.98);
+  opacity: 0.8;
+  transition: transform 0.1s ease, opacity 0.1s ease;
+}
+
+.train-unit-button.pressing {
+  transform: scale(0.98);
+  opacity: 0.8;
+  transition: transform 0.1s ease, opacity 0.1s ease;
+}
+
+/* Loading/Skeleton States */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(53, 56, 67, 0.7);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  z-index: 5;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-subtle);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Skeleton UI for loading states */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-light) 25%, var(--surface) 50%, var(--surface-light) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   .resource-change {
@@ -1165,5 +1226,14 @@
   
   .resource-animating .resource-amount {
     animation: none;
+  }
+  
+  .loading-spinner {
+    animation: none;
+  }
+  
+  .skeleton {
+    animation: none;
+    background: var(--surface-light);
   }
 }

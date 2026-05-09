@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import buildingDefinitions from '../../data/building-definitions.json';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 
@@ -10,10 +10,14 @@ export default function BuildingCard({
   onBuildUpgrade
 }) {
   const { impactLight } = useHapticFeedback();
+  const [isPressing, setIsPressing] = useState(false);
 
   const handleBuildUpgrade = useCallback(() => {
     impactLight();
+    setIsPressing(true);
     onBuildUpgrade(buildingName);
+    // Reset pressing state after animation
+    setTimeout(() => setIsPressing(false), 150);
   }, [onBuildUpgrade, buildingName, impactLight]);
   const nextLevel = level + 1;
   const definition = buildingDefinitions[buildingName]?.[nextLevel];
@@ -65,6 +69,7 @@ export default function BuildingCard({
             disabled={isDisabled}
             title={!hasDependencies ? `Requires: ${dependencyInfo}` : !canAfford ? "Not enough resources" : ""}
             aria-label={ariaLabel}
+            className={isPressing ? 'pressing' : ''}
           >
             {actionText} ({costString})
           </button>
