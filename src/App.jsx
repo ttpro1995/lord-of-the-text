@@ -9,6 +9,7 @@ import BuildingCard from './components/BuildingCard.jsx';
 import UnitTraining from './components/UnitTraining.jsx';
 import ArmyDisplay from './components/ArmyDisplay.jsx';
 import TabNavigation from './components/TabNavigation.jsx';
+import NotificationSystem from './components/NotificationSystem.jsx';
 import gameConstants from './data/game-constants.json';
 
 function App() {
@@ -23,7 +24,6 @@ function App() {
   const [resetConfirmText, setResetConfirmText] = useState('');
   const [activeTab, setActiveTab] = useState('kingdom');
   const stateRef = useRef(state);
-  const notificationTimers = useRef(new Map());
 
   useEffect(() => { stateRef.current = state; }, [state]);
 
@@ -78,36 +78,6 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Notification auto-dismiss
-  useEffect(() => {
-    state.notifications.forEach(notification => {
-      if (!notificationTimers.current.has(notification.id)) {
-        const timer = setTimeout(() => {
-          dispatch({ type: 'DISMISS_NOTIFICATION', payload: notification.id });
-          notificationTimers.current.delete(notification.id);
-        }, 5000);
-        notificationTimers.current.set(notification.id, timer);
-      }
-    });
-    const currentIds = new Set(state.notifications.map(n => n.id));
-    Array.from(notificationTimers.current.keys()).forEach(id => {
-      if (!currentIds.has(id)) {
-        clearTimeout(notificationTimers.current.get(id));
-        notificationTimers.current.delete(id);
-      }
-    });
-  }, [state.notifications]);
-
-  useEffect(() => () => notificationTimers.current.forEach(t => clearTimeout(t)), []);
-
-  const dismissNotification = (id) => {
-    if (notificationTimers.current.has(id)) {
-      clearTimeout(notificationTimers.current.get(id));
-      notificationTimers.current.delete(id);
-    }
-    dispatch({ type: 'DISMISS_NOTIFICATION', payload: id });
-  };
-
   // Save/Load
   useEffect(() => {
     const handleKeyPress = (e) => {
@@ -144,24 +114,28 @@ function App() {
     }
   };
 
+  const dismissNotification = (id) => {
+    dispatch({ type: 'DISMISS_NOTIFICATION', payload: id });
+  };
+
   const buildings = ["Lumber-Camp", "Farm", "Quarry", "Iron-Mine", "Barracks", "Warehouse", "Granary"];
 
   return (
     <div className="app">
-      <header className="top-bar">
+      <header className="top-bar" role="banner">
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <h1>Lord of the Text – {state.version}</h1>
-          <button className="settings-button" onClick={() => setShowSettings(true)}>⚙️ Settings</button>
+          <button className="settings-button" onClick={() => setShowSettings(true)} aria-label="Open settings">⚙️ Settings</button>
         </div>
         <ResourceDisplay resources={state.resources} buildings={state.buildings} resourceCap={calculateResourceCap} />
       </header>
 
-      <main className="game-content">
+      <main className="game-content" role="main">
         <p>Welcome, {state.playerName}!</p>
         <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
         {activeTab === 'kingdom' && (
-          <div className="buildings">
+          <div className="buildings" role="region" aria-label="Kingdom Buildings">
             {buildings.map(name => (
               <BuildingCard
                 key={name}
@@ -199,25 +173,21 @@ function App() {
 
       <footer className="version-badge">{state.version}</footer>
 
-      <div className="toast-notifications" role="region" aria-live="polite">
-        {state.notifications.map(n => (
-          <div key={n.id} className="toast">
-            <span>{n.message}</span>
-            <button className="toast-dismiss" onClick={() => dismissNotification(n.id)} aria-label="Dismiss">✕</button>
-          </div>
-        ))}
-      </div>
+      <NotificationSystem 
+        notifications={state.notifications} 
+        onDismiss={dismissNotification} 
+      />
 
       {showSettings && (
         <div className="settings-modal-overlay" onClick={() => setShowSettings(false)}>
-          <div className="settings-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
-            <h2>Settings</h2>
+          <div className="settings-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="settings-title">
+            <h2 id="settings-title">Settings</h2>
             <p>Game Version: {state.version}</p>
             <p>Resources saved automatically. Manual Save: 'S' key, Load: 'L' key</p>
             <p>Keyboard shortcuts: B=Kingdom, U=Army, M=Train Max</p>
             <div className="danger-zone">
-              <h3><span className="warning-icon">⚠️</span> Danger Zone</h3>
-              <button className="danger-button" onClick={() => setShowResetConfirm(true)}>🗑️ Hard Reset</button>
+              <h3><span className="warning-icon" aria-hidden="true">⚠️</span> Danger Zone</h3>
+              <button className="danger-button" onClick={() => setShowResetConfirm(true)} aria-label="Hard reset game - Dangerous action">🗑️ Hard Reset</button>
             </div>
             <button onClick={() => setShowSettings(false)}>Close</button>
           </div>
@@ -226,10 +196,10 @@ function App() {
 
       {showResetConfirm && (
         <div className="confirm-dialog-overlay" onClick={() => setShowResetConfirm(false)}>
-          <div className="confirm-dialog" onClick={e => e.stopPropagation()} role="alertdialog">
-            <h3>Confirm Hard Reset</h3>
+          <div className="confirm-dialog" onClick={e => e.stopPropagation()} role="alertdialog" aria-labelledby="confirm-title">
+            <h3 id="confirm-title">Confirm Hard Reset</h3>
             <p>Type <strong>RESET</strong> to confirm:</p>
-            <input value={resetConfirmText} onChange={e => setResetConfirmText(e.target.value)} placeholder="Type RESET" autoFocus />
+            <input value={resetConfirmText} onChange={e => setResetConfirmText(e.target.value)} placeholder="Type RESET" autoFocus aria-label="Type RESET to confirm" />
             <div className="confirm-dialog-buttons">
               <button onClick={() => setShowResetConfirm(false)}>Cancel</button>
               <button onClick={handleHardResetConfirm} disabled={resetConfirmText !== 'RESET'}>Confirm</button>

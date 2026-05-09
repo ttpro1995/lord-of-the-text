@@ -80,6 +80,8 @@
   border-radius: var(--radius-md);
   transition: var(--transition);
   min-width: 70px;
+  position: relative;
+  overflow: visible;
 }
 
 .resource:hover {
@@ -1119,4 +1121,49 @@
 
 .tab-button:focus:not(.active) {
   box-shadow: 0 0 0 2px var(--accent-primary);
+}
+
+/* Resource Change Animations */
+.resource-change {
+  position: absolute;
+  font-size: 0.9rem;
+  font-weight: 700;
+  pointer-events: none;
+  animation: slideUpAndFade 2s ease-out forwards;
+  z-index: 10;
+}
+
+.resource-change.gain {
+  color: var(--accent-secondary);
+}
+
+.resource-change.loss {
+  color: var(--accent-danger);
+}
+
+@keyframes slideUpAndFade {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.8);
+  }
+}
+
+.resource-animating .resource-amount {
+  animation: pulse 0.5s ease-in-out;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .resource-change {
+    animation: none;
+    opacity: 0;
+  }
+  
+  .resource-animating .resource-amount {
+    animation: none;
+  }
 }

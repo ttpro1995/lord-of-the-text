@@ -28,7 +28,7 @@ export default function UnitTraining({
     return Math.min(maxByResources, maxByCap);
   }, [resources, unitCap, unitsCount, unitQueueCount]);
 
-  const handleTrainMax = () => {
+  const handleTrainMaxClick = () => {
     if (maxAffordable > 0) {
       setTrainQuantity(maxAffordable);
       onTrainMax(unitType, maxAffordable);
@@ -42,10 +42,10 @@ export default function UnitTraining({
   };
 
   return (
-    <div className="unit-training">
+    <div className="unit-training" role="region" aria-label="Unit Training">
       <h3>Unit Training</h3>
       <div className="unit-cap-display">
-        <p title={`Base cap: ${unitCap}, training queue counts toward cap`}>
+        <p title={`Base cap: ${unitCap}, training queue counts toward cap`} aria-label={`Unit Cap: ${unitsCount} of ${unitCap}`}>
           Unit Cap: {unitsCount}/{unitCap}
         </p>
       </div>
@@ -58,6 +58,7 @@ export default function UnitTraining({
             value={unitType}
             disabled
             className="unit-type-select"
+            aria-label="Unit type selector"
           >
 <option value="Peasant-Spear">
                Peasant Spear ({Object.entries(UNIT_COST).map(([r, v]) => `${v} ${r.charAt(0).toUpperCase()}`).join(', ')})
@@ -74,6 +75,7 @@ export default function UnitTraining({
             value={trainQuantity}
             onChange={(e) => setTrainQuantity(Math.max(1, parseInt(e.target.value) || 1))}
             className="quantity-input"
+            aria-label="Number of units to train"
           />
         </div>
         <div className="training-buttons">
@@ -81,14 +83,16 @@ export default function UnitTraining({
             className="train-unit-button"
             onClick={handleTrain}
             disabled={trainQuantity <= 0 || unitsCount + unitQueueCount >= unitCap}
+            aria-label={`Train ${trainQuantity} ${unitType.replace('-', ' ')} units`}
           >
             🗡️ Train {trainQuantity} Peasant Spear
           </button>
           <button
             className="train-max-button"
-            onClick={handleTrainMax}
+            onClick={handleTrainMaxClick}
             disabled={maxAffordable <= 0 || unitsCount + unitQueueCount >= unitCap}
             title="Train maximum affordable units"
+            aria-label={`Train maximum affordable units: ${maxAffordable}`}
           >
             📊 Train Max ({maxAffordable})
           </button>
@@ -96,7 +100,7 @@ export default function UnitTraining({
       </div>
 
       {/* Training Queue */}
-      <div className="training-queue">
+      <div className="training-queue" role="status" aria-live="polite">
         <h4>Training Queue ({unitQueueCount})</h4>
         {unitQueueCount === 0 ? (
           <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No units in training</p>
