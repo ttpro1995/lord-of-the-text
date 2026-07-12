@@ -1,6 +1,7 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import buildingDefinitions from '../../data/building-definitions.json';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
+import { getBuildBlockers, formatBlockers } from '../utils/blockers.js';
 
 export default function BuildingCard({
   buildingName,
@@ -10,15 +11,16 @@ export default function BuildingCard({
   onBuildUpgrade
 }) {
   const { impactLight } = useHapticFeedback();
-  const [isPressing, setIsPressing] = useState(false);
 
-  const handleBuildUpgrade = useCallback(() => {
-    impactLight();
-    setIsPressing(true);
-    onBuildUpgrade(buildingName);
-    // Reset pressing state after animation
-    setTimeout(() => setIsPressing(false), 150);
-  }, [onBuildUpgrade, buildingName, impactLight]);
+  const blockers = useMemo(() => 
+    getBuildBlockers(buildingName, buildings, resources, buildingDefinitions),
+    [buildingName, buildings, resources]
+  );
+
+  const hasBlockers = blockers.length > 0;
+  const isMaxLevel = blockers.some(b => b.code === 'MAX_LEVEL');
+  const blockerMessages = blockers.filter(b => b.code !== 'MAX_LEVEL');
+  
   const nextLevel = level + 1;
   const definition = buildingDefinitions[buildingName]?.[nextLevel];
   
@@ -32,29 +34,13 @@ export default function BuildingCard({
         .join(', ')
     : '';
 
-  // Check dependencies
-  const dependencies = definition?.dependencies || [];
-  const hasDependencies = dependencies.every(dep => {
-    const requiredBuildingLevel = buildings[dep.building] || 0;
-    return requiredBuildingLevel >= dep.level;
-  });
+  const tooltip = formatBlockers(blockers);
+  const ariaLabel = `${buildingName.replace('-', ' ')}, level ${level}. ${tooltip || 'Ready to build'}`;
 
-  // Check if we can afford the building
-  const costs = definition?.cost || {};
-  const canAfford = Object.entries(costs).every(
-    ([resource, cost]) => resources[resource.toLowerCase()] >= cost
-  );
-
-  // Get dependency info for tooltip
-  const dependencyInfo = dependencies.map(dep => {
-    const requiredBuildingLevel = buildings[dep.building] || 0;
-    const buildingNameFormatted = dep.building.replace('-', ' ');
-    return `${buildingNameFormatted} (Lv ${requiredBuildingLevel}/${dep.level})`;
-  }).join(', ');
-
-  const isDisabled = level === 0 ? !hasDependencies || !canAfford : !canAfford;
-  const actionText = level === 0 ? 'Build' : `Upgrade to Lv ${nextLevel}`;
-  const ariaLabel = `${buildingName.replace('-', ' ')}, level ${level}. ${isDisabled ? 'Requires: ' + dependencyInfo : canAfford ? actionText : 'Insufficient resources'}`;
+  const handleBuildUpgrade = useCallback(() => {
+    impactLight();
+    onBuildUpgrade(buildingName);
+  }, [onBuildUpgrade, buildingName, impactLight]);
 
   return (
     <div className="building-card" role="region" aria-label={buildingName.replace('-', ' ')}>
@@ -62,31 +48,33 @@ export default function BuildingCard({
         {buildingName.replace('-', ' ')}
         <span className="building-level">Lv {level}</span>
       </h3>
-      {definition ? (
+      {isMaxLevel ? (
+        <div className="max-level" role="status">
+          Max Level Reached
+        </div>
+      ) : definition ? (
         <>
           <button
             onClick={handleBuildUpgrade}
-            disabled={isDisabled}
-            title={!hasDependencies ? `Requires: ${dependencyInfo}` : !canAfford ? "Not enough resources" : ""}
+            disabled={hasBlockers}
+            title={tooltip}
             aria-label={ariaLabel}
-            className={isPressing ? 'pressing' : ''}
           >
-            {actionText} ({costString})
+            {level === 0 ? 'Build' : `Upgrade to Lv ${nextLevel}`} ({costString})
           </button>
-          {!hasDependencies && (
-            <div className="dependency-lock" role="alert" aria-live="polite">
-              🔒 Requires: {dependencyInfo}
-            </div>
-          )}
-          {hasDependencies && !canAfford && (
-            <div className="resource-lock" role="alert" aria-live="polite">
-              💰 Insufficient resources
+          {blockerMessages.length > 0 && (
+            <div className="blocker-messages" aria-live="polite">
+              {blockerMessages.map((blocker, index) => (
+                <div key={index} className={`blocker-message ${blocker.code.toLowerCase()}`}>
+                  {blocker.message}
+                </div>
+              ))}
             </div>
           )}
         </>
       ) : (
         <div className="max-level" role="status">
-          ✅ Max Level Reached
+          Max Level Reached
         </div>
       )}
     </div>
