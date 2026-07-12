@@ -4,6 +4,7 @@ import { initialState, calculateResourceCap } from './constants/gameState.js';
 import { BASE_UNIT_CAP, UNIT_CAP_PER_BARRACKS_LEVEL } from './constants/unitConstants.js';
 import { gameReducer } from './constants/gameReducer.js';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js';
+import { toTicksFromSeconds } from './utils/timeConversion.js';
 import ResourceDisplay from './components/ResourceDisplay.jsx';
 import BuildingCard from './components/BuildingCard.jsx';
 import UnitTraining from './components/UnitTraining.jsx';
@@ -13,11 +14,34 @@ import NotificationSystem from './components/NotificationSystem.jsx';
 import gameConstants from './data/game-constants.json';
 
 function App() {
+  // Migration for legacy second-based queue items
+  const migrateState = (loadedState) => {
+    if (!loadedState) return null;
+
+    // Check if unitQueue has second-based trainingTime values (legacy)
+    // Legacy values are >= 30, tick-native values are <= 2
+    const needsMigration = loadedState.unitQueue &&
+      loadedState.unitQueue.some(item => item.trainingTime >= 30);
+
+    if (needsMigration) {
+      const migratedState = { ...loadedState };
+      migratedState.unitQueue = loadedState.unitQueue.map(item => ({
+        ...item,
+        trainingTime: toTicksFromSeconds(item.trainingTime),
+        progress: toTicksFromSeconds(item.progress || 0)
+      }));
+      return migratedState;
+    }
+
+    return loadedState;
+  };
+
   // Try to load saved state from localStorage, or use initialState if none exists
   const savedState = localStorage.getItem('gameState');
   const lastActive = localStorage.getItem('lastActive');
   const loadedState = savedState ? JSON.parse(savedState) : null;
-  const initialGameState = loadedState ? { ...initialState, ...loadedState } : initialState;
+  const migratedState = migrateState(loadedState);
+  const initialGameState = migratedState ? { ...initialState, ...migratedState } : initialState;
   const [state, dispatch] = useReducer(gameReducer, initialGameState);
   const [showSettings, setShowSettings] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -35,16 +59,22 @@ function App() {
     const unitType = 'Peasant-Spear';
     const unitCost = gameConstants.unitCosts[unitType] || { food: 10, timber: 5 };
     let maxByResources = Infinity;
-    
+
     Object.entries(unitCost).forEach(([resource, cost]) => {
       const available = state.resources[resource] || 0;
       maxByResources = Math.min(maxByResources, Math.floor(available / cost));
     });
-    
+
     return Math.max(0, Math.min(maxByResources, unitCap - state.units.length - state.unitQueue.length));
   }, [state.resources, state.units.length, state.unitQueue.length, unitCap]);
 
   // Keyboard shortcuts
+  const handleManualTick = () => {
+    dispatch({ type: 'TICK' });
+    localStorage.setItem('gameState', JSON.stringify(stateRef.current));
+    localStorage.setItem('lastActive', Date.now().toString());
+  };
+
   const handleTrainMax = () => {
     if (maxAffordable > 0) {
       dispatch({ type: 'TRAIN_UNITS_BATCH', payload: { unitType: 'Peasant-Spear', quantity: maxAffordable } });
@@ -55,6 +85,7 @@ function App() {
     'b': () => setActiveTab('kingdom'),
     'u': () => setActiveTab('army'),
     'm': handleTrainMax,
+    ' ': handleManualTick,
     'escape': () => { setShowSettings(false); setShowResetConfirm(false); },
   });
 
@@ -127,7 +158,10 @@ function App() {
           <h1>Lord of the Text – {state.version}</h1>
           <button className="settings-button" onClick={() => setShowSettings(true)} aria-label="Open settings">⚙️ Settings</button>
         </div>
-        <ResourceDisplay resources={state.resources} buildings={state.buildings} resourceCap={calculateResourceCap} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button className="tick-button" onClick={handleManualTick} title="Advance turn (Space)">Tick (+1)</button>
+          <ResourceDisplay resources={state.resources} buildings={state.buildings} resourceCap={calculateResourceCap} />
+        </div>
       </header>
 
       <main className="game-content" role="main">
@@ -184,7 +218,7 @@ function App() {
             <h2 id="settings-title">Settings</h2>
             <p>Game Version: {state.version}</p>
             <p>Resources saved automatically. Manual Save: 'S' key, Load: 'L' key</p>
-            <p>Keyboard shortcuts: B=Kingdom, U=Army, M=Train Max</p>
+            <p>Keyboard shortcuts: B=Kingdom, U=Army, M=Train Max, Space=Tick</p>
             <div className="danger-zone">
               <h3><span className="warning-icon" aria-hidden="true">⚠️</span> Danger Zone</h3>
               <button className="danger-button" onClick={() => setShowResetConfirm(true)} aria-label="Hard reset game - Dangerous action">🗑️ Hard Reset</button>

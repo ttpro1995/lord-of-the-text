@@ -4,7 +4,7 @@ import { calculateProductionRates } from '../utils/productionCalculator';
 export default function ResourceDisplay({ resources, buildings, resourceCap }) {
   const [prevResources, setPrevResources] = useState(resources);
   const [resourceChanges, setResourceChanges] = useState({}); // { resource: { amount, type } }
-  
+
   const productionRates = calculateProductionRates(buildings);
 
   useEffect(() => {
@@ -19,15 +19,15 @@ export default function ResourceDisplay({ resources, buildings, resourceCap }) {
         };
       }
     });
-    
+
     if (Object.keys(newChanges).length > 0) {
       setResourceChanges(newChanges);
-      
+
       // Clear changes after animation
       const timeout = setTimeout(() => {
         setResourceChanges({});
       }, 2000);
-      
+
       return () => clearTimeout(timeout);
     }
   }, [resources, prevResources]);
@@ -52,13 +52,13 @@ export default function ResourceDisplay({ resources, buildings, resourceCap }) {
         const cap = resourceCap(resource, { buildings, resources });
         const rate = productionRates[resource] || 0;
         const change = resourceChanges[resource];
-        
+
         return (
-          <div 
-            key={resource} 
+          <div
+            key={resource}
             className={`resource ${change ? 'resource-animating' : ''}`}
-            title={`${resource.charAt(0).toUpperCase() + resource.slice(1)}: ${Math.floor(amount)}/${cap}${rate > 0 ? ` (+${rate}/min)` : ''}`}
-            aria-label={`${resource.charAt(0).toUpperCase() + resource.slice(1)}: ${Math.floor(amount)}${rate > 0 ? `, producing ${rate} per minute` : ''}${cap > 200 ? `, capacity ${cap}` : ''}`}
+            title={`${resource.charAt(0).toUpperCase() + resource.slice(1)}: ${Math.floor(amount)}/${cap}${rate > 0 ? ` (+${rate}/tick)` : ''}`}
+            aria-label={`${resource.charAt(0).toUpperCase() + resource.slice(1)}: ${Math.floor(amount)}${rate > 0 ? `, producing ${rate} per tick` : ''}${cap > 200 ? `, capacity ${cap}` : ''}`}
             role="status"
           >
             <span className="resource-icon" aria-hidden="true">{resourceIcons[resource] || resource.charAt(0).toUpperCase()}</span>
@@ -69,7 +69,7 @@ export default function ResourceDisplay({ resources, buildings, resourceCap }) {
               </span>
             )}
             {rate > 0 && (
-              <span className="resource-rate" aria-label={`Production rate: ${Math.floor(rate)} per minute`}>{Math.floor(rate)}/min</span>
+              <span className="resource-rate" aria-label={`Production rate: ${Math.floor(rate)} per tick`}>{Math.floor(rate)}/tick</span>
             )}
             {cap > 200 && (
               <span className="resource-cap" aria-label={`Capacity: ${cap}`}>/ {cap}</span>

@@ -11,14 +11,15 @@ Lord of the Text is an incremental base-building game where you manage a kingdom
 - **Military Expansion**: Train diverse units including infantry, archers, cavalry, and siege engines to conquer territories.
 - **Territory Conquest**: Raid villages, towns, castles, temples, and monster dens for passive buffs, unique items, and new manageable bases.
 - **Technology Research**: Invest in knowledge to unlock technologies that enhance production, military strength, and strategic options.
-- **Idle Mechanics**: Resources accumulate automatically with auto-save functionality allowing offline progress.
+- **Manual Turn Progression**: Advance the game turn manually by clicking the Tick button or pressing Space. Resources and unit queues progress one step per tick.
+- **Offline Progress**: Resources accumulate when the game is closed (capped by storage limits). Progress continues automatically after returning.
 - **Random Events**: Respond to dynamic events that can boost production or pose challenges requiring strategic decisions.
 - **Notifications**: Toast-style notifications with auto-dismiss and manual controls for game events.
 
 ## Core Gameplay Loop
 
 ### Step 1 – Resource Generation
-- **Passive Production**: Resource buildings (e.g., Lumber Camp, Quarry, Farm) produce resources over time.
+- **Manual Progression**: Click the Tick button or press Space to advance one turn. Resource buildings produce resources per tick based on their level.
 - **Player Interaction**: Collect accumulated resources and manage storage capacity.
 
 ### Step 2 – Resource Allocation
@@ -41,9 +42,9 @@ Lord of the Text is an incremental base-building game where you manage a kingdom
 - Periodic random events (positive or negative).
 - Player makes strategic decisions.
 
-### Step 6 – Save & Idle Progress
-- Autosave to localStorage.
-- Idle accumulation with storage caps.
+### Step 6 – Save & Progression
+- Autosave to localStorage on each tick.
+- Offline progress calculates missed ticks when returning.
 
 ### Hard Reset
 - Full game reset available in Settings > Danger Zone
@@ -59,7 +60,7 @@ The core gameplay loop defines the repeating cycle of actions the player engages
 
 ```mermaid
 flowchart TD
-    A[Generate Resources] --> B[Allocate Resources]
+    A[Tick to Generate Resources] --> B[Allocate Resources]
     B --> C[Construct/Upgrade Buildings]
     B --> D[Train Units]
     C --> E[Increase Production Capacity]
@@ -72,15 +73,16 @@ flowchart TD
 ```
 
 Key elements:
-1. Resources accumulate automatically
+1. Players advance turns manually via Tick button or Space key
 2. Players spend resources to build, train, and research
 3. Military conquest provides rewards and new bases
 4. Technology unlocks unlock new options
 5. Random events add dynamism
 
 Offline Progress:
-- Resources continue to accumulate when the game is closed (capped by storage limits)
-- Progress is saved automatically to localStorage
+- Resources continue to accumulate based on ticks elapsed while away (capped by storage limits)
+- Progress is calculated automatically when returning to the game based on last active time
+- Time conversion: 1 minute = 1 tick (ceiling rounding)
 
 ## Notifications System
 
