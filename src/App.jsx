@@ -69,10 +69,14 @@ function App() {
   }, [state.resources, state.units.length, state.unitQueue.length, unitCap]);
 
   // Keyboard shortcuts
+  const [showTickFeedback, setShowTickFeedback] = useState(false);
+
   const handleManualTick = () => {
     dispatch({ type: 'TICK' });
     localStorage.setItem('gameState', JSON.stringify(stateRef.current));
     localStorage.setItem('lastActive', Date.now().toString());
+    setShowTickFeedback(true);
+    setTimeout(() => setShowTickFeedback(false), 150);
   };
 
   const handleTrainMax = () => {
@@ -98,16 +102,6 @@ function App() {
     }
     localStorage.setItem('lastActive', Date.now().toString());
   }, [lastActive]);
-
-  // Game tick and autosave
-  useEffect(() => {
-    const interval = setInterval(() => {
-      dispatch({ type: 'TICK' });
-      localStorage.setItem('gameState', JSON.stringify(stateRef.current));
-      localStorage.setItem('lastActive', Date.now().toString());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Save/Load
   useEffect(() => {
@@ -159,7 +153,13 @@ function App() {
           <button className="settings-button" onClick={() => setShowSettings(true)} aria-label="Open settings">⚙️ Settings</button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <button className="tick-button" onClick={handleManualTick} title="Advance turn (Space)">Tick (+1)</button>
+          <button 
+          className={`tick-button ${showTickFeedback ? 'tick-feedback' : ''}`} 
+          onClick={handleManualTick} 
+          title="Advance turn (Space)"
+        >
+          Tick (Space)
+        </button>
           <ResourceDisplay resources={state.resources} buildings={state.buildings} resourceCap={calculateResourceCap} />
         </div>
       </header>
