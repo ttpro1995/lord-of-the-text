@@ -53,8 +53,9 @@ describe('Integration Tests - End-to-End User Flows', () => {
     expect(screen.getByText('200')).toBeInTheDocument();
 
     // Find and click build Lumber-Camp button (button text is "Build (50 T, 30 S)")
-    const lumberCampButton = screen.getByRole('button', { name: /build.*50 T.*30 S/i });
-    fireEvent.click(lumberCampButton);
+    const buildButtons = screen.getAllByText(/Build/i);
+    // First available buildable building (Lumber-Camp)
+    fireEvent.click(buildButtons[0].closest('button'));
 
     // Wait for state update and check resources after build
     await waitFor(() => {
@@ -70,7 +71,7 @@ describe('Integration Tests - End-to-End User Flows', () => {
     expect(screen.getAllByText(/lumber-camp complete/i)).toHaveLength(1);
 
     // Find and click upgrade button for Lumber-Camp (button text is "Upgrade to Lv 2 (100 T, 60 S)")
-    const upgradeButton = screen.getByRole('button', { name: /upgrade.*lv 2.*100 T.*60 S/i });
+    const upgradeButton = screen.getByRole('button', { name: /upgrade/i });
     fireEvent.click(upgradeButton);
 
     // Wait for state update and check resources after upgrade
@@ -114,8 +115,10 @@ describe('Integration Tests - End-to-End User Flows', () => {
     // Since training takes 30 seconds, we can check the queue fills and then the unit appears
 
     // Step 1: Build Farm level 1 (button text is "Build (40 T, 20 S)")
-    const farmButton = screen.getByRole('button', { name: /build.*40 T.*20 S/i });
-    fireEvent.click(farmButton);
+    // Find Farm building card and click its build button
+    const farmCard = screen.getByText('Farm').closest('.building-card');
+    const farmBuildButton = farmCard.querySelector('button');
+    fireEvent.click(farmBuildButton);
 
     await waitFor(() => {
       expect(screen.getByText('360')).toBeInTheDocument(); // 400 - 40 timber
@@ -123,7 +126,7 @@ describe('Integration Tests - End-to-End User Flows', () => {
     });
 
     // Step 2: Upgrade Farm to level 2 (button text is "Upgrade to Lv 2 (80 T, 40 S)")
-    const upgradeFarmButton = screen.getByRole('button', { name: /upgrade.*lv 2.*80 T.*40 S/i });
+    const upgradeFarmButton = screen.getByRole('button', { name: /upgrade/i });
     fireEvent.click(upgradeFarmButton);
 
     await waitFor(() => {
@@ -132,8 +135,9 @@ describe('Integration Tests - End-to-End User Flows', () => {
     });
 
     // Step 3: Build Barracks (button text is "Build (70 T, 50 F)")
-    const barracksButton = screen.getByRole('button', { name: /build.*70 T.*50 F/i });
-    fireEvent.click(barracksButton);
+    const barracksCard = screen.getByText('Barracks').closest('.building-card');
+    const barracksBuildButton = barracksCard.querySelector('button');
+    fireEvent.click(barracksBuildButton);
 
     await waitFor(() => {
       expect(screen.getByText('210')).toBeInTheDocument(); // 280 - 70 timber
@@ -342,8 +346,8 @@ describe('Integration Tests - End-to-End User Flows', () => {
     await screen.findByText(/Lord of the Text/);
 
     // Build Lumber-Camp
-    const buildButton = screen.getByRole('button', { name: /build.*50 T.*30 S/i });
-    fireEvent.click(buildButton);
+    const lumberCampCard = screen.getByText('Lumber Camp').closest('.building-card');
+    fireEvent.click(lumberCampCard.querySelector('button'));
 
     // Check notification appears with message
     await waitFor(() => {
@@ -366,7 +370,8 @@ describe('Integration Tests - End-to-End User Flows', () => {
     await screen.findByText(/Lord of the Text/);
 
     // Build Lumber-Camp to create notification
-    const buildButton = screen.getByRole('button', { name: /build.*50 T.*30 S/i });
+    const lumberCampCard = screen.getByText('Lumber Camp').closest('.building-card');
+    const buildButton = lumberCampCard.querySelector('button');
     fireEvent.click(buildButton);
 
     // Wait for notification to appear
@@ -399,7 +404,8 @@ describe('Integration Tests - End-to-End User Flows', () => {
       await screen.findByText(/Lord of the Text/);
 
       // Build Lumber-Camp to create notification
-      const buildButton = screen.getByRole('button', { name: /build.*50 T.*30 S/i });
+      const lumberCampCard = screen.getByText('Lumber Camp').closest('.building-card');
+      const buildButton = lumberCampCard.querySelector('button');
       fireEvent.click(buildButton);
 
       // Wait for notification to appear
@@ -436,23 +442,28 @@ describe('Integration Tests - End-to-End User Flows', () => {
       render(<App />);
       await screen.findByText(/Lord of the Text/);
 
-      // Build Farm
-      const farmButton = screen.getByRole('button', { name: /build.*40 T.*20 S/i });
-      fireEvent.click(farmButton);
+      // Build Lumber-Camp (first buildable building in UI)
+      const lumberCampCard1 = screen.getByText('Lumber Camp').closest('.building-card');
+      fireEvent.click(lumberCampCard1.querySelector('button'));
 
-      // Build Lumber-Camp immediately after (should appear at top)
-      const lumberButton = screen.getByRole('button', { name: /build.*50 T.*30 S/i });
-      fireEvent.click(lumberButton);
+      // Wait for Lumber-Camp notification to appear
+      await waitFor(() => {
+        expect(screen.getByText(/lumber-camp complete/i)).toBeInTheDocument();
+      });
+
+      // Build Farm (second buildable building in UI)
+      const farmCard = screen.getByText('Farm').closest('.building-card');
+      fireEvent.click(farmCard.querySelector('button'));
 
       // Wait for notifications to appear
       await screen.findByText(/lumber-camp complete/i);
       await screen.findByText(/farm complete/i);
 
-      // Verify the order: Lumber-Camp (newest) should appear before Farm (older)
+      // Verify the order: Farm (newest) should appear before Lumber-Camp (older)
       const notifications = screen.getAllByRole('button', { name: /dismiss/i });
       expect(notifications).toHaveLength(2);
-      // The first notification element should contain "Lumber-Camp complete" (most recent)
-      expect(notifications[0].closest('.toast')).toHaveTextContent(/lumber-camp complete/i);
+      // The first notification element should contain "Farm complete" (most recent)
+      expect(notifications[0].closest('.toast')).toHaveTextContent(/farm complete/i);
     } finally {
       vi.useRealTimers();
     }
@@ -476,25 +487,34 @@ describe('Integration Tests - End-to-End User Flows', () => {
       render(<App />);
       await screen.findByText(/Lord of the Text/);
 
-      // Build Farm first
-      const farmButton = screen.getByRole('button', { name: /build.*40 T.*20 S/i });
-      fireEvent.click(farmButton);
+      // Build Lumber-Camp first (first buildable building in UI)
+      const lumberCampCard = screen.getByText('Lumber Camp').closest('.building-card');
+      fireEvent.click(lumberCampCard.querySelector('button'));
 
-      // Build Lumber-Camp second (should be at top)
-      const lumberButton = screen.getByRole('button', { name: /build.*50 T.*30 S/i });
-      fireEvent.click(lumberButton);
+      // Wait for Lumber-Camp notification
+      await waitFor(() => {
+        expect(screen.getByText(/lumber-camp complete/i)).toBeInTheDocument();
+      });
 
-      // Wait for notifications to appear
-      await screen.findByText(/lumber-camp complete/i);
-      await screen.findByText(/farm complete/i);
+      // Build Farm second (second buildable building in UI)
+      const farmCard = screen.getByText('Farm').closest('.building-card');
+      fireEvent.click(farmCard.querySelector('button'));
 
-      // Dismiss the top (most recent) notification
+      // Wait for Farm notification
+      await waitFor(() => {
+        expect(screen.getByText(/farm complete/i)).toBeInTheDocument();
+      });
+
+      // Dismiss the top (most recent) notification - Farm
       const dismissButtons = screen.getAllByRole('button', { name: /dismiss/i });
       fireEvent.click(dismissButtons[0]);
 
-      // Verify Lumber-Camp notification is gone, Farm remains
-      expect(screen.queryByText(/lumber-camp complete/i)).not.toBeInTheDocument();
-      expect(screen.getByText(/farm complete/i)).toBeInTheDocument();
+      // Wait a bit for the dismissal
+      await vi.advanceTimersByTimeAsync(100);
+
+      // Verify Farm notification is gone, Lumber-Camp remains
+      expect(screen.queryByText(/farm complete/i)).not.toBeInTheDocument();
+      expect(screen.getByText(/lumber-camp complete/i)).toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }

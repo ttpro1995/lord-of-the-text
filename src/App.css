@@ -80,6 +80,8 @@
   border-radius: var(--radius-md);
   transition: var(--transition);
   min-width: 70px;
+  position: relative;
+  overflow: visible;
 }
 
 .resource:hover {
@@ -1143,4 +1145,164 @@
 
 .tab-button:focus:not(.active) {
   box-shadow: 0 0 0 2px var(--accent-primary);
+}
+
+/* Resource Change Animations */
+.resource-change {
+  position: absolute;
+  font-size: 0.9rem;
+  font-weight: 700;
+  pointer-events: none;
+  animation: slideUpAndFade 2s ease-out forwards;
+  z-index: 10;
+}
+
+.resource-change.gain {
+  color: var(--accent-secondary);
+}
+
+.resource-change.loss {
+  color: var(--accent-danger);
+}
+
+@keyframes slideUpAndFade {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.8);
+  }
+}
+
+.resource-animating .resource-amount {
+  animation: pulse 0.5s ease-in-out;
+}
+
+/* Button press feedback */
+.building-card button.pressing {
+  transform: scale(0.98);
+  opacity: 0.8;
+  transition: transform 0.1s ease, opacity 0.1s ease;
+}
+
+.train-unit-button.pressing {
+  transform: scale(0.98);
+  opacity: 0.8;
+  transition: transform 0.1s ease, opacity 0.1s ease;
+}
+
+/* Loading/Skeleton States */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(53, 56, 67, 0.7);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  z-index: 5;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-subtle);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Skeleton UI for loading states */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-light) 25%, var(--surface) 50%, var(--surface-light) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resource-change {
+    animation: none;
+    opacity: 0;
+  }
+
+  .resource-animating .resource-amount {
+    animation: none;
+  }
+
+  .loading-spinner {
+    animation: none;
+  }
+
+  .skeleton {
+    animation: none;
+    background: var(--surface-light);
+  }
+}
+
+/* Pulsing on resource generation (tick-based) */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }
+}
+
+.resource.resource-generating {
+  animation: pulseGlow 1s ease-in-out;
+}
+
+/* Mobile Safe Area Support */
+@supports (padding: max(0px)) {
+  .app {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .top-bar {
+    padding-left: calc(2rem + env(safe-area-inset-left));
+    padding-right: calc(2rem + env(safe-area-inset-right));
+  }
+
+  .toast-notifications {
+    top: calc(1rem + env(safe-area-inset-top));
+    right: calc(1rem + env(safe-area-inset-right));
+  }
+
+  .version-badge {
+    bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    left: calc(1.5rem + env(safe-area-inset-left));
+  }
+}
+
+@media (max-width: 768px) {
+  @supports (padding: max(0px)) {
+    .top-bar {
+      padding-left: calc(1rem + env(safe-area-inset-left));
+      padding-right: calc(1rem + env(safe-area-inset-right));
+    }
+  }
 }

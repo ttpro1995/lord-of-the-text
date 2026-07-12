@@ -2,6 +2,7 @@ import buildingDefinitions from '../../data/building-definitions.json';
 import gameConstants from '../data/game-constants.json';
 import { initialState, BASE_RESOURCE_CAPS, calculateResourceCap } from './gameState.js';
 import { BASE_UNIT_CAP, UNIT_CAP_PER_BARRACKS_LEVEL } from './unitConstants.js';
+import { toTicksFromSeconds } from '../utils/timeConversion.js';
 
 // Reducer function
 export function gameReducer(state, action) {
@@ -11,21 +12,21 @@ export function gameReducer(state, action) {
     case 'TICK': {
       let newResources = { ...state.resources };
 
-      // Process resource production from buildings
+      // Process resource production from buildings (tick-native)
       Object.entries(state.buildings).forEach(([buildingName, level]) => {
         if (level > 0 && buildingDefinitions[buildingName]) {
           const production = buildingDefinitions[buildingName][level].production || {};
           Object.entries(production).forEach(([resource, amount]) => {
-            const amountPerTick = amount / 60;
+            // Production values are per-tick (per-minute gameplay rate)
             newResources[resource] = Math.min(
               calculateResourceCap(resource, state),
-              newResources[resource] + amountPerTick
+              newResources[resource] + amount
             );
           });
         }
       });
 
-      // Process unit training queue
+      // Process unit training queue (tick-based progress)
       let newUnitQueue = [...state.unitQueue];
       let newUnits = [...state.units];
       let notifications = [];
@@ -47,10 +48,10 @@ export function gameReducer(state, action) {
         return updatedItem;
       }).filter(Boolean);
 
-      // Calculate and apply food consumption from units
+      // Calculate and apply food consumption from units (per-tick)
       const totalFoodConsumption = newUnits.reduce((total, unit) => {
-        const consumptionPerMinute = gameConstants.unitFoodConsumption[unit.type] || 0;
-        return total + (consumptionPerMinute / 60);
+        const consumptionPerTick = gameConstants.unitFoodConsumption[unit.type] || 0;
+        return total + consumptionPerTick;
       }, 0);
       newResources.food = Math.max(0, newResources.food - totalFoodConsumption);
 
@@ -267,29 +268,29 @@ export function gameReducer(state, action) {
     }
     case 'OFFLINE_PROGRESS': {
       const { seconds } = action.payload;
+      const offlineTicks = toTicksFromSeconds(seconds);
       let newResources = { ...state.resources };
       let newUnits = [...state.units];
       let newUnitQueue = [...state.unitQueue];
-      let notifications = [...state.notifications]; // Copy any existing notifications
+      let notifications = [...state.notifications];
 
-// Calculate resource production over offline period
-       Object.entries(state.buildings).forEach(([buildingName, level]) => {
-         if (level > 0 && buildingDefinitions[buildingName]) {
-           const production = buildingDefinitions[buildingName][level].production || {};
-           Object.entries(production).forEach(([resource, amountPerMinute]) => {
-             const amountPerSecond = amountPerMinute / 60;
-             const totalGain = amountPerSecond * seconds;
-             newResources[resource] = Math.min(
-               calculateResourceCap(resource, state),
-               newResources[resource] + totalGain
-             );
-           });
-         }
-       });
+      // Calculate resource production over offline period (tick-native)
+      Object.entries(state.buildings).forEach(([buildingName, level]) => {
+        if (level > 0 && buildingDefinitions[buildingName]) {
+          const production = buildingDefinitions[buildingName][level].production || {};
+          Object.entries(production).forEach(([resource, amountPerTick]) => {
+            const totalGain = amountPerTick * offlineTicks;
+            newResources[resource] = Math.min(
+              calculateResourceCap(resource, state),
+              newResources[resource] + totalGain
+            );
+          });
+        }
+      });
 
       // Advance unit training queue over offline period
       newUnitQueue = newUnitQueue.map(item => {
-        const newProgress = item.progress + seconds;
+        const newProgress = item.progress + offlineTicks;
         if (newProgress >= item.trainingTime) {
           newUnits.push({
             type: item.type,
@@ -300,15 +301,15 @@ export function gameReducer(state, action) {
             message: `Unit ready: ${item.type}`,
             timestamp: Date.now()
           });
-          return null; // Remove from queue
+          return null;
         }
         return { ...item, progress: newProgress };
       }).filter(Boolean);
 
-      // Calculate and apply food consumption over offline period
+      // Calculate and apply food consumption over offline period (per-tick)
       const totalFoodConsumption = newUnits.reduce((total, unit) => {
-        const consumptionPerMinute = gameConstants.unitFoodConsumption[unit.type] || 0;
-        return total + (consumptionPerMinute / 60) * seconds;
+        const consumptionPerTick = gameConstants.unitFoodConsumption[unit.type] || 0;
+        return total + (consumptionPerTick * offlineTicks);
       }, 0);
       newResources.food = Math.max(0, newResources.food - totalFoodConsumption);
 

@@ -19,7 +19,7 @@ Lord of the Text is an incremental base-building game where you manage a kingdom
 ## Core Gameplay Loop
 
 ### Step 1 – Resource Generation
-- **Manual Progression**: Click the Tick button or press Space to advance one turn. Resource buildings produce resources per turn based on their level.
+- **Manual Progression**: Click the Tick button or press Space to advance one turn. Resource buildings produce resources per tick based on their level.
 - **Player Interaction**: Collect accumulated resources and manage storage capacity.
 
 ### Step 2 – Resource Allocation
@@ -80,8 +80,9 @@ Key elements:
 5. Random events add dynamism
 
 Offline Progress:
-- Resources continue to accumulate based on time away (capped by storage limits)
+- Resources continue to accumulate based on ticks elapsed while away (capped by storage limits)
 - Progress is calculated automatically when returning to the game based on last active time
+- Time conversion: 1 minute = 1 tick (ceiling rounding)
 
 ## Notifications System
 
