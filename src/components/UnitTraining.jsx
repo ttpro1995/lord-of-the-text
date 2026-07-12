@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import gameConstants from '../data/game-constants.json';
+import { getTrainingBlockers, formatBlockers } from '../utils/blockers.js';
 
 const UNIT_COST = gameConstants.unitCosts["Peasant-Spear"] || { food: 10, timber: 5 };
 
@@ -13,6 +14,14 @@ export default function UnitTraining({
 }) {
   const [trainQuantity, setTrainQuantity] = useState(1);
   const unitType = 'Peasant-Spear';
+
+  const blockers = useMemo(() => {
+    // Pass empty arrays - the blocker function only checks length and resources
+    const units = Array(unitsCount).fill(null);
+    const unitQueue = Array(unitQueueCount).fill(null);
+    const buildings = {};
+    return getTrainingBlockers(unitType, buildings, resources, units, unitQueue, gameConstants.unitCosts);
+  }, [resources, unitCap, unitsCount, unitQueueCount]);
 
   const maxAffordable = useMemo(() => {
     let maxByResources = Infinity;
@@ -40,6 +49,9 @@ export default function UnitTraining({
       onTrainUnits(unitType, trainQuantity);
     }
   };
+
+  const blockerMessages = blockers.filter(b => b.code !== 'MAX_LEVEL');
+  const hasBlockers = blockerMessages.length > 0;
 
   return (
     <div className="unit-training" role="region" aria-label="Unit Training">
@@ -85,7 +97,7 @@ export default function UnitTraining({
             disabled={trainQuantity <= 0 || unitsCount + unitQueueCount >= unitCap}
             aria-label={`Train ${trainQuantity} ${unitType.replace('-', ' ')} units`}
           >
-            🗡️ Train {trainQuantity} Peasant Spear
+            Train {trainQuantity} Peasant Spear
           </button>
           <button
             className="train-max-button"
@@ -94,10 +106,21 @@ export default function UnitTraining({
             title="Train maximum affordable units"
             aria-label={`Train maximum affordable units: ${maxAffordable}`}
           >
-            📊 Train Max ({maxAffordable})
+            Train Max ({maxAffordable})
           </button>
         </div>
       </div>
+
+      {/* Blocker messages */}
+      {hasBlockers && (
+        <div className="training-blockers" aria-live="polite">
+          {blockerMessages.map((blocker, index) => (
+            <div key={index} className={`blocker-message ${blocker.code.toLowerCase()}`} aria-label={blocker.code}>
+              {blocker.message}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Training Queue */}
       <div className="training-queue" role="status" aria-live="polite">
