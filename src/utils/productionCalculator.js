@@ -15,11 +15,5 @@ export function calculateProductionRates(buildings) {
     });
   });
 
-  // Convert per-second to per-minute
-  const ratesPerMinute = {};
-  Object.entries(rates).forEach(([resource, amountPerSecond]) => {
-    ratesPerMinute[resource] = amountPerSecond * 60;
-  });
-
-  return ratesPerMinute;
+  return rates;
 }

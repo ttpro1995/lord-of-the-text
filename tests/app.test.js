@@ -35,10 +35,10 @@ describe('Milestone 1 - Timber Resource System', () => {
     expect(stateAfterBuild.buildings['Lumber-Camp']).toBe(1);
 
     // Check timber production - only from Lumber-Camp Lv 1 (no base production)
-    // Lumber-Camp Lv 1 produces 5 timber per minute = 5/60 per tick
+    // Lumber-Camp Lv 1 produces 5 timber per tick
     const stateAfterTick = gameReducer(stateAfterBuild, { type: 'TICK' });
     expect(stateAfterTick.resources.timber).toBeCloseTo(
-      stateAfterBuild.resources.timber + (5/60),
+      stateAfterBuild.resources.timber + 5,
       10
     );
   });
@@ -68,10 +68,10 @@ describe('Milestone 1 - Timber Resource System', () => {
     expect(stateAfterUpgrade.buildings['Lumber-Camp']).toBe(2);
 
     // Check timber production - only from Lumber-Camp Lv 2 (no base production)
-    // Lumber-Camp Lv 2 produces 12 timber per minute = 12/60 per tick
+    // Lumber-Camp Lv 2 produces 12 timber per tick
     const stateAfterTick = gameReducer(stateAfterUpgrade, { type: 'TICK' });
     expect(stateAfterTick.resources.timber).toBeCloseTo(
-      stateAfterUpgrade.resources.timber + (12/60),
+      stateAfterUpgrade.resources.timber + 12,
       10
     );
   });
@@ -101,10 +101,10 @@ describe('Milestone 1 - Timber Resource System', () => {
     expect(stateAfterUpgrade.buildings['Lumber-Camp']).toBe(3);
 
     // Check timber production - only from Lumber-Camp Lv 3 (no base production)
-    // Lumber-Camp Lv 3 produces 28 timber per minute = 28/60 per tick
+    // Lumber-Camp Lv 3 produces 28 timber per tick
     const stateAfterTick = gameReducer(stateAfterUpgrade, { type: 'TICK' });
     expect(stateAfterTick.resources.timber).toBeCloseTo(
-      stateAfterUpgrade.resources.timber + (28/60),
+      stateAfterUpgrade.resources.timber + 28,
       10
     );
   });
@@ -214,7 +214,7 @@ describe('Hard Reset Feature', () => {
         { type: 'Peasant-Spear', id: 2 }
       ],
       unitQueue: [
-        { type: 'Peasant-Spear', progress: 10, trainingTime: 30 }
+        { type: 'Peasant-Spear', progress: 0, trainingTime: 1 }
       ],
       notifications: ['Building complete', 'Unit ready'],
       version: 'v0.3'
@@ -262,5 +262,50 @@ describe('Hard Reset Feature', () => {
 
     // Should match initial state exactly
     expect(resetState).toEqual(initialState);
+  });
+
+  it('should apply offline progress in tick units', () => {
+    // State with Farm for food production
+    const stateWithFarm = {
+      ...initialState,
+      buildings: {
+        ...initialState.buildings,
+        'Farm': 1
+      },
+      resources: {
+        ...initialState.resources,
+        food: 100
+      }
+    };
+
+    // 120 seconds offline = 2 ticks
+    const offlineState = gameReducer(stateWithFarm, { 
+      type: 'OFFLINE_PROGRESS', 
+      payload: { seconds: 120 }
+    });
+
+    // Farm produces 3 food per tick, 2 ticks = 6 food
+    expect(offlineState.resources.food).toBe(106);
+  });
+
+  it('should complete unit training during offline progress', () => {
+    // State with unit in training (trainingTime 1 tick)
+    const stateWithTraining = {
+      ...initialState,
+      unitQueue: [
+        { type: 'Peasant-Spear', progress: 0, trainingTime: 1 }
+      ]
+    };
+
+    // 60 seconds offline = 1 tick, should complete training
+    const offlineState = gameReducer(stateWithTraining, { 
+      type: 'OFFLINE_PROGRESS', 
+      payload: { seconds: 60 }
+    });
+
+    // Unit should be trained
+    expect(offlineState.units).toHaveLength(1);
+    expect(offlineState.unitQueue).toHaveLength(0);
+    expect(offlineState.notifications).toHaveLength(1);
   });
 });
