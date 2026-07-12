@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { useHapticFeedback } from '../hooks/useHapticFeedback';
+
+const TABS_CONFIG = [
+  { id: 'kingdom', label: '🏰 Kingdom' },
+  { id: 'army', label: '⚔️ Army' }
+];
 
 export default function TabNavigation({ activeTab, onTabChange }) {
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
-  const tabs = [
-    { id: 'kingdom', label: '🏰 Kingdom' },
-    { id: 'army', label: '⚔️ Army' }
-  ];
+  const { selection } = useHapticFeedback();
+  const tabs = useMemo(() => TABS_CONFIG, []);
 
   // Minimum swipe distance
   const minSwipeDistance = 50;
@@ -20,7 +24,12 @@ export default function TabNavigation({ activeTab, onTabChange }) {
     setTouchEnd(e.targetTouches[0].clientX);
   };
 
-  const onTouchEnd = () => {
+  const handleTabChange = useCallback((tabId) => {
+    onTabChange(tabId);
+    selection();
+  }, [onTabChange, selection]);
+
+  const onTouchEnd = useCallback(() => {
     if (!touchStart || !touchEnd) return;
     
     const distance = touchStart - touchEnd;
@@ -28,14 +37,19 @@ export default function TabNavigation({ activeTab, onTabChange }) {
     const isRightSwipe = distance < -minSwipeDistance;
 
     const currentIndex = tabs.findIndex(t => t.id === activeTab);
+    let newTabId = null;
 
     if (isLeftSwipe && currentIndex < tabs.length - 1) {
-      onTabChange(tabs[currentIndex + 1].id);
+      newTabId = tabs[currentIndex + 1].id;
     }
     if (isRightSwipe && currentIndex > 0) {
-      onTabChange(tabs[currentIndex - 1].id);
+      newTabId = tabs[currentIndex - 1].id;
     }
-  };
+    
+    if (newTabId) {
+      handleTabChange(newTabId);
+    }
+  }, [touchStart, touchEnd, activeTab, tabs, handleTabChange]);
 
   return (
     <div 
@@ -48,7 +62,9 @@ export default function TabNavigation({ activeTab, onTabChange }) {
         <button
           key={tab.id}
           className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
-          onClick={() => onTabChange(tab.id)}
+          onClick={() => handleTabChange(tab.id)}
+          aria-selected={activeTab === tab.id}
+          aria-label={`Switch to ${tab.label} tab`}
         >
           {tab.label}
         </button>
