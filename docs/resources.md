@@ -33,6 +33,8 @@ Production rates increase with building levels and applied buffs. Base productio
 - **Knowledge**: 1 per Library at Level 1
 - **Faith**: 1 per Temple at Level 1
 
+> Note: Production rates are displayed in the UI as "/tick" and update in real-time.
+
 ### Upgrade Scaling
 
 Buildings typically increase production by 15-25% per level upgrade, with dependencies unlocking higher-tier buildings for exponential growth.

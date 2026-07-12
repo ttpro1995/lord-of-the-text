@@ -1241,23 +1241,68 @@
   }
 }
 
-/* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   .resource-change {
     animation: none;
     opacity: 0;
   }
-  
+
   .resource-animating .resource-amount {
     animation: none;
   }
-  
+
   .loading-spinner {
     animation: none;
   }
-  
+
   .skeleton {
     animation: none;
     background: var(--surface-light);
+  }
+}
+
+/* Pulsing on resource generation (tick-based) */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }
+}
+
+.resource.resource-generating {
+  animation: pulseGlow 1s ease-in-out;
+}
+
+/* Mobile Safe Area Support */
+@supports (padding: max(0px)) {
+  .app {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .top-bar {
+    padding-left: calc(2rem + env(safe-area-inset-left));
+    padding-right: calc(2rem + env(safe-area-inset-right));
+  }
+
+  .toast-notifications {
+    top: calc(1rem + env(safe-area-inset-top));
+    right: calc(1rem + env(safe-area-inset-right));
+  }
+
+  .version-badge {
+    bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    left: calc(1.5rem + env(safe-area-inset-left));
+  }
+}
+
+@media (max-width: 768px) {
+  @supports (padding: max(0px)) {
+    .top-bar {
+      padding-left: calc(1rem + env(safe-area-inset-left));
+      padding-right: calc(1rem + env(safe-area-inset-right));
+    }
   }
 }

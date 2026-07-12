@@ -4,31 +4,45 @@ import { calculateProductionRates } from '../utils/productionCalculator';
 export default function ResourceDisplay({ resources, buildings, resourceCap }) {
   const [prevResources, setPrevResources] = useState(resources);
   const [resourceChanges, setResourceChanges] = useState({}); // { resource: { amount, type } }
+  const [pulsingResources, setPulsingResources] = useState(new Set());
 
   const productionRates = calculateProductionRates(buildings);
 
   useEffect(() => {
     const newChanges = {};
+    const nowPulsing = new Set();
+
     Object.keys(resources).forEach(resource => {
       if (!prevResources) return;
       const change = resources[resource] - (prevResources[resource] || 0);
-      if (change !== 0) {
+      if (change > 0) {
         newChanges[resource] = {
           amount: Math.abs(Math.floor(change)),
-          type: change > 0 ? 'gain' : 'loss'
+          type: 'gain'
         };
+        // Also trigger pulse animation
+        nowPulsing.add(resource);
       }
     });
 
     if (Object.keys(newChanges).length > 0) {
       setResourceChanges(newChanges);
+      setPulsingResources(nowPulsing);
 
       // Clear changes after animation
       const timeout = setTimeout(() => {
         setResourceChanges({});
       }, 2000);
 
-      return () => clearTimeout(timeout);
+      // Clear pulse after animation duration
+      const pulseTimeout = setTimeout(() => {
+        setPulsingResources(new Set());
+      }, 1000);
+
+      return () => {
+        clearTimeout(timeout);
+        clearTimeout(pulseTimeout);
+      };
     }
   }, [resources, prevResources]);
 
@@ -52,11 +66,12 @@ export default function ResourceDisplay({ resources, buildings, resourceCap }) {
         const cap = resourceCap(resource, { buildings, resources });
         const rate = productionRates[resource] || 0;
         const change = resourceChanges[resource];
+        const isPulsing = pulsingResources.has(resource);
 
         return (
           <div
             key={resource}
-            className={`resource ${change ? 'resource-animating' : ''}`}
+            className={`resource ${change ? 'resource-animating' : ''} ${isPulsing ? 'resource-generating' : ''}`}
             title={`${resource.charAt(0).toUpperCase() + resource.slice(1)}: ${Math.floor(amount)}/${cap}${rate > 0 ? ` (+${rate}/tick)` : ''}`}
             aria-label={`${resource.charAt(0).toUpperCase() + resource.slice(1)}: ${Math.floor(amount)}${rate > 0 ? `, producing ${rate} per tick` : ''}${cap > 200 ? `, capacity ${cap}` : ''}`}
             role="status"
