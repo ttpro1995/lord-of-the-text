@@ -11,15 +11,15 @@ Lord of the Text is an incremental base-building game where you manage a kingdom
 - **Military Expansion**: Train diverse units including infantry, archers, cavalry, and siege engines to conquer territories.
 - **Territory Conquest**: Raid villages, towns, castles, temples, and monster dens for passive buffs, unique items, and new manageable bases.
 - **Technology Research**: Invest in knowledge to unlock technologies that enhance production, military strength, and strategic options.
-- **Manual Turn Progression**: Advance the game turn manually by clicking the Tick button or pressing Space. Resources and unit queues progress one step per tick.
-- **Offline Progress**: Resources accumulate when the game is closed (capped by storage limits). Progress continues automatically after returning.
+- **Manual Turn Progression**: Advance the game turn manually by clicking the **Tick (Space)** button or pressing Space. Resources and unit queues progress one step per tick. No auto-tick - gameplay only advances when you take action.
+- **Offline Progress**: Resources accumulate when the game is closed (capped by storage limits). Progress continues automatically after returning based on last active timestamp.
 - **Random Events**: Respond to dynamic events that can boost production or pose challenges requiring strategic decisions.
 - **Notifications**: Toast-style notifications with auto-dismiss and manual controls for game events.
 
 ## Core Gameplay Loop
 
 ### Step 1 – Resource Generation
-- **Manual Progression**: Click the Tick button or press Space to advance one turn. Resource buildings produce resources per tick based on their level.
+- **Manual Progression**: Click the **Tick (Space)** button or press Space to advance one turn. Resource buildings produce resources per tick based on their level. No background ticks occur - gameplay only progresses on player action.
 - **Player Interaction**: Collect accumulated resources and manage storage capacity.
 
 ### Step 2 – Resource Allocation

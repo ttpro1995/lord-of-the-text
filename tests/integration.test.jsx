@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import App from '../src/App.jsx';
 import { initialState } from '../src/constants/gameState.js';
 
@@ -519,4 +519,127 @@ describe('Integration Tests - End-to-End User Flows', () => {
       vi.useRealTimers();
     }
   }, 10000);
+});
+
+describe('Manual Tick Behavior - Story 11', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorageMock.getItem.mockReturnValue(null);
+    localStorageMock.setItem.mockClear();
+    Date.now = vi.fn(() => 1000000000000);
+  });
+
+  afterEach(() => {
+    Date.now = originalNow;
+    vi.useRealTimers();
+  });
+
+  it('should not progress game state without interaction (no auto-tick)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    render(<App />);
+    await screen.findByText(/Lord of the Text/);
+
+    // Get initial timber value (100 in initialState) - be specific
+    const timberResourceBefore = screen.getByText('🌲').closest('.resource');
+    const initialTimber = parseInt(timberResourceBefore.querySelector('.resource-amount').textContent);
+
+    // Wait 3 seconds without any interaction
+    await vi.advanceTimersByTimeAsync(3000);
+
+    // Check timber is still same (no auto-tick)
+    const timberResourceAfter = screen.getByText('🌲').closest('.resource');
+    const finalTimber = parseInt(timberResourceAfter.querySelector('.resource-amount').textContent);
+    
+    expect(finalTimber).toBe(initialTimber);
+  });
+
+  it('should progress exactly one tick when clicking Tick button', async () => {
+    // Custom state with Farm built for food production
+    const customInitialState = {
+      ...initialState,
+      buildings: { Farm: 1 },
+      resources: { ...initialState.resources, timber: 100, stone: 50 }
+    };
+    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(customInitialState));
+
+    render(<App />);
+    await screen.findByText(/Lord of the Text/);
+
+    // Click tick button once
+    const tickButton = screen.getByRole('button', { name: /tick/i });
+    fireEvent.click(tickButton);
+
+    // Food should increase (Farm produces 3 food at level 1)
+    await waitFor(() => {
+      // Food should increase from 20 to 23 (Farm produces 3 food per tick at level 1)
+      const foodResource = screen.getByText('🍖').closest('.resource');
+      expect(foodResource.querySelector('.resource-amount').textContent).toBe('23');
+    });
+  });
+
+  it('should progress exactly one tick when pressing Space', async () => {
+    const customInitialState = {
+      ...initialState,
+      buildings: { Farm: 1 }
+    };
+    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(customInitialState));
+
+    render(<App />);
+    await screen.findByText(/Lord of the Text/);
+
+    // Press Space key
+    fireEvent.keyDown(document, { key: ' ' });
+
+    // Food should increase (Farm produces 3 food)
+    await waitFor(() => {
+      const foodResource = screen.getByText('🍖').closest('.resource');
+      expect(foodResource.querySelector('.resource-amount').textContent).toBe('23');
+    });
+  });
+
+  it('should not progress game state without interaction (no auto-tick)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    render(<App />);
+    await screen.findByText(/Lord of the Text/);
+
+    // Get initial food value (starts at 20 in initialState)
+    const foodResourceBefore = screen.getByText('🍖').closest('.resource');
+    const initialFood = parseInt(foodResourceBefore.querySelector('.resource-amount').textContent);
+
+    // Wait 3 seconds without any interaction
+    await vi.advanceTimersByTimeAsync(3000);
+
+    // Check food is still same (no auto-tick)
+    const foodResourceAfter = screen.getByText('🍖').closest('.resource');
+    const finalFood = parseInt(foodResourceAfter.querySelector('.resource-amount').textContent);
+    
+    expect(finalFood).toBe(initialFood);
+  });
+
+  it('should show tick feedback animation on manual tick', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    render(<App />);
+    await screen.findByText(/Lord of the Text/);
+
+    const tickButton = screen.getByRole('button', { name: /tick/i });
+
+    // Click tick button
+    fireEvent.click(tickButton);
+
+    // Button should have tick-feedback class immediately after click
+    expect(tickButton.className).toMatch(/tick-feedback/);
+
+    // After 150ms, class should be removed
+    vi.advanceTimersByTime(200);
+    await act(async () => {});
+    expect(tickButton.className).not.toMatch(/tick-feedback/);
+  });
+
+  it('should show tick button text with Space shortcut hint', async () => {
+    render(<App />);
+    await screen.findByText(/Lord of the Text/);
+
+    const tickButton = screen.getByRole('button', { name: /tick/i });
+    expect(tickButton).toHaveTextContent(/Space/);
+  });
 });
