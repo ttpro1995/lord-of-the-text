@@ -539,18 +539,18 @@ describe('Manual Tick Behavior - Story 11', () => {
     render(<App />);
     await screen.findByText(/Lord of the Text/);
 
-    // Get initial timber value (100 in initialState) - be specific
-    const timberResourceBefore = screen.getByText('🌲').closest('.resource');
-    const initialTimber = parseInt(timberResourceBefore.querySelector('.resource-amount').textContent);
+    // Get initial food value (starts at 20 in initialState)
+    const foodResourceBefore = screen.getByText('🍖').closest('.resource');
+    const initialFood = parseInt(foodResourceBefore.querySelector('.resource-amount').textContent);
 
     // Wait 3 seconds without any interaction
     await vi.advanceTimersByTimeAsync(3000);
 
-    // Check timber is still same (no auto-tick)
-    const timberResourceAfter = screen.getByText('🌲').closest('.resource');
-    const finalTimber = parseInt(timberResourceAfter.querySelector('.resource-amount').textContent);
+    // Check food is still same (no auto-tick)
+    const foodResourceAfter = screen.getByText('🍖').closest('.resource');
+    const finalFood = parseInt(foodResourceAfter.querySelector('.resource-amount').textContent);
     
-    expect(finalTimber).toBe(initialTimber);
+    expect(finalFood).toBe(initialFood);
   });
 
   it('should progress exactly one tick when clicking Tick button', async () => {
@@ -595,25 +595,6 @@ describe('Manual Tick Behavior - Story 11', () => {
       const foodResource = screen.getByText('🍖').closest('.resource');
       expect(foodResource.querySelector('.resource-amount').textContent).toBe('23');
     });
-  });
-
-  it('should not progress game state without interaction (no auto-tick)', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    render(<App />);
-    await screen.findByText(/Lord of the Text/);
-
-    // Get initial food value (starts at 20 in initialState)
-    const foodResourceBefore = screen.getByText('🍖').closest('.resource');
-    const initialFood = parseInt(foodResourceBefore.querySelector('.resource-amount').textContent);
-
-    // Wait 3 seconds without any interaction
-    await vi.advanceTimersByTimeAsync(3000);
-
-    // Check food is still same (no auto-tick)
-    const foodResourceAfter = screen.getByText('🍖').closest('.resource');
-    const finalFood = parseInt(foodResourceAfter.querySelector('.resource-amount').textContent);
-    
-    expect(finalFood).toBe(initialFood);
   });
 
   it('should show tick feedback animation on manual tick', async () => {
