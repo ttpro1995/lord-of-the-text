@@ -1,7 +1,8 @@
-import { useReducer, useEffect, useState } from 'react';
+import { useReducer, useEffect, useState, useMemo } from 'react';
 import './App.css';
 import buildingDefinitions from '../data/building-definitions.json';
 import gameConstants from './data/game-constants.json';
+import { getBuildBlockers, getTrainingBlockers, formatBlockers } from './utils/blockers.js';
 
 // Initial state
 export const initialState = {
@@ -332,50 +333,104 @@ function App() {
     setResetConfirmText('');
   };
 
-  const renderBuildingCard = (buildingName) => {
+  const TrainingPanel = ({ unitType, state, onTrain, unitCosts }) => {
+    const trainingBlockers = useMemo(() => 
+      getTrainingBlockers(unitType, state.buildings, state.resources, state.units, state.unitQueue, unitCosts),
+      [unitType, state.buildings, state.resources, state.units, state.unitQueue, unitCosts]
+    );
+
+    const hasBlockers = trainingBlockers.length > 0;
+    const isDisabled = hasBlockers;
+    
+    const unitCost = unitCosts[unitType];
+    const costString = unitCost 
+      ? Object.entries(unitCost).map(([res, val]) => `${val} ${res.charAt(0).toUpperCase() + res.slice(1)}`).join(', ') 
+      : '';
+
+    return (
+      <div className="training-panel">
+        <button
+          onClick={() => onTrain(unitType)}
+          disabled={isDisabled}
+          aria-disabled={isDisabled}
+          aria-label={formatBlockers(trainingBlockers)}
+        >
+          Train Peasant Spear ({costString})
+        </button>
+        {trainingBlockers.length > 0 && (
+          <div className="training-blockers" aria-live="polite">
+            {trainingBlockers.map((blocker, index) => (
+              <div key={index} className={`blocker-message ${blocker.code.toLowerCase()}`} aria-label={blocker.code}>
+                {blocker.message}
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="training-queue">
+          <h4>Training Queue</h4>
+          {state.unitQueue.map((item, index) => (
+            <div key={index}>
+              {item.type} - {item.progress}/{item.trainingTime}s
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const BuildingBlockers = ({ buildingName }) => {
+    const blockers = useMemo(() => 
+      getBuildBlockers(buildingName, state.buildings, state.resources, buildingDefinitions),
+      [buildingName, state.buildings, state.resources, buildingDefinitions]
+    );
+
+    const hasBlockers = blockers.length > 0;
+    const isDisabled = hasBlockers;
     const currentLevel = state.buildings[buildingName] || 0;
     const nextLevel = currentLevel + 1;
     const definition = buildingDefinitions[buildingName]?.[nextLevel];
-    const costString = definition ? Object.entries(definition.cost).map(([res, val]) => `${val} ${res.charAt(0).toUpperCase()}`).join(', ') : '';
 
-    // Check dependencies
-    const dependencies = definition?.dependencies || [];
-    const hasDependencies = dependencies.every(dep => {
-      const requiredBuildingLevel = state.buildings[dep.building] || 0;
-      return requiredBuildingLevel >= dep.level;
-    });
+    const isMaxLevel = blockers.some(b => b.code === 'MAX_LEVEL');
+    
+    let costString = '';
+    let tooltip = '';
+    if (definition) {
+      costString = Object.entries(definition.cost).map(([res, val]) => `${val} ${res.charAt(0).toUpperCase()}`).join(', ');
+      tooltip = formatBlockers(blockers);
+    }
 
-    // Check if we can afford the building
-    const costs = definition?.cost || {};
-    const canAfford = Object.entries(costs).every(
-      ([resource, cost]) => state.resources[resource.toLowerCase()] >= cost
-    );
-
-    // Get dependency info for tooltip
-    const dependencyInfo = dependencies.map(dep => {
-      const requiredBuildingLevel = state.buildings[dep.building] || 0;
-      const buildingNameFormatted = dep.building.replace('-', ' ');
-      return `${buildingNameFormatted} (Lv ${requiredBuildingLevel}/${dep.level})`;
-    }).join(', ');
+    const blockerMessages = blockers.filter(b => b.code !== 'MAX_LEVEL');
 
     return (
       <div className="building-card">
         <h3>{buildingName.replace('-', ' ')} (Lv {currentLevel})</h3>
-        {definition ? (
+        {isMaxLevel ? (
+          <p className="max-level-message">Max Level Reached</p>
+        ) : (
           <button
             onClick={() => handleBuildUpgrade(buildingName)}
-            disabled={!hasDependencies || !canAfford}
-            title={!hasDependencies ? `Requires: ${dependencyInfo}` : !canAfford ? "Not enough resources" : ""}
+            disabled={isDisabled}
+            aria-disabled={isDisabled}
+            aria-label={tooltip}
           >
             {currentLevel === 0 ? 'Build' : 'Upgrade to Lv ' + nextLevel} ({costString})
-            {!hasDependencies && <span className="dependency-lock"> (Locked)</span>}
-            {!canAfford && <span className="resource-lock"> (Not enough resources)</span>}
           </button>
-        ) : (
-          <p>Max Level Reached</p>
+        )}
+        {blockerMessages.length > 0 && (
+          <div className="blocker-messages" aria-live="polite">
+            {blockerMessages.map((blocker, index) => (
+              <div key={index} className={`blocker-message ${blocker.code.toLowerCase()}`} aria-label={blocker.code}>
+                {blocker.message}
+              </div>
+            ))}
+          </div>
         )}
       </div>
     );
+  };
+
+  const renderBuildingCard = (buildingName) => {
+    return <BuildingBlockers buildingName={buildingName} />;
   };
 
   // Calculate unit cap
@@ -415,20 +470,12 @@ function App() {
           <p title={`Base cap: ${BASE_UNIT_CAP}, +${UNIT_CAP_PER_BARRACKS_LEVEL} per Barracks level`}>
             Unit Cap: {state.units.length}/{unitCap}
           </p>
-          <button
-            onClick={() => handleTrainUnit("Peasant-Spear")}
-            disabled={state.units.length >= unitCap}
-          >
-            Train Peasant Spear (10 Food, 5 Timber)
-          </button>
-          <div className="training-queue">
-            <h4>Training Queue</h4>
-            {state.unitQueue.map((item, index) => (
-              <div key={index}>
-                {item.type} - {item.progress}/{item.trainingTime}s
-              </div>
-            ))}
-          </div>
+          <TrainingPanel
+            unitType="Peasant-Spear"
+            state={state}
+            onTrain={handleTrainUnit}
+            unitCosts={gameConstants.unitCosts}
+          />
         </div>
         <div className="units">
           <h3>Your Units</h3>

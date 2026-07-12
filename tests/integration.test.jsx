@@ -319,4 +319,95 @@ describe('Integration Tests - End-to-End User Flows', () => {
       expect(screen.queryByText('Settings')).not.toBeInTheDocument();
     });
   });
+
+  // Blocked-action explanation tests
+  describe('Blocked-action explanations', () => {
+    it('should show missing resources blockers on building cards', async () => {
+      // No resources - should show blockers
+      const customInitialState = {
+        ...initialState,
+        resources: { timber: 0, stone: 0, iron: 0, food: 0, gold: 0, knowledge: 0 }
+      };
+      localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(customInitialState));
+
+      render(<App />);
+      await screen.findByText(/Lord of the Text/);
+
+      // Check that blocker messages are present (multiple buildings show them)
+      const blockerElements = document.querySelectorAll('.blocker-message.missing_resource');
+      expect(blockerElements.length).toBeGreaterThan(0);
+      expect(blockerElements[0].textContent).toContain('Missing:');
+    });
+
+    it('should show dependency blockers on building cards', async () => {
+      // Farm not built yet, so Iron-Mine should show dependency blocker
+      const customInitialState = {
+        ...initialState,
+        resources: { timber: 1000, stone: 1000, iron: 1000, food: 1000, gold: 1000, knowledge: 1000 },
+        buildings: { ...initialState.buildings, "Quarry": 1 } // Quarry but no Farm
+      };
+      localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(customInitialState));
+
+      render(<App />);
+      await screen.findByText(/Lord of the Text/);
+
+      // Iron-Mine requires Quarry Lv 2, current is Lv 1
+      const blockerElements = document.querySelectorAll('.blocker-message.missing_dependency');
+      const hasQuarryDep = Array.from(blockerElements).some(el => el.textContent.includes('Requires Quarry Lv 2'));
+      expect(hasQuarryDep).toBe(true);
+    });
+
+    it('should show max level message when building is at max level', async () => {
+      // Build Lumber-Camp to max level
+      const customInitialState = {
+        ...initialState,
+        resources: { timber: 1000, stone: 1000, iron: 20, food: 20, gold: 20, knowledge: 20 },
+        buildings: { ...initialState.buildings, "Lumber-Camp": 3 }
+      };
+      localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(customInitialState));
+
+      render(<App />);
+      await screen.findByText(/Lord of the Text/);
+
+      expect(screen.getByText('Max Level Reached')).toBeInTheDocument();
+    });
+
+    it('should show training blockers for insufficient resources', async () => {
+      // Very low resources - cannot train
+      const customInitialState = {
+        ...initialState,
+        resources: { timber: 2, stone: 20, iron: 20, food: 2, gold: 20, knowledge: 20 },
+        buildings: { ...initialState.buildings }
+      };
+      localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(customInitialState));
+
+      render(<App />);
+      await screen.findByText(/Lord of the Text/);
+
+      // Should show missing resource blockers for training
+      const trainingBlockers = document.querySelectorAll('.training-blockers .blocker-message');
+      const hasMissingResource = Array.from(trainingBlockers).some(el => el.textContent.includes('Missing'));
+      expect(hasMissingResource).toBe(true);
+    });
+
+    it('should show training blockers for cap reached', async () => {
+      // Units at cap
+      const customInitialState = {
+        ...initialState,
+        resources: { timber: 100, stone: 100, iron: 20, food: 100, gold: 20, knowledge: 20 },
+        buildings: { ...initialState.buildings, "Barracks": 0 },
+        units: Array(5).fill(null).map((_, i) => ({ type: "Peasant-Spear", id: i + 1 })),
+        unitQueue: []
+      };
+      localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(customInitialState));
+
+      render(<App />);
+      await screen.findByText(/Lord of the Text/);
+
+      // Should show cap reached blocker
+      const trainingBlockers = document.querySelectorAll('.training-blockers .blocker-message');
+      const hasCapReacher = Array.from(trainingBlockers).some(el => el.textContent.includes('cap reached'));
+      expect(hasCapReacher).toBe(true);
+    });
+  });
 });
