@@ -196,8 +196,8 @@ describe('Milestone 2 - Growing Estate (v0.3)', () => {
         payload: { unitType: 'Peasant-Spear' }
       });
 
-      // Simulate training time (30 ticks)
-      for (let i = 0; i < 30; i++) {
+      // Simulate training time (1 tick)
+      for (let i = 0; i < 1; i++) {
         state = gameReducer(state, { type: 'TICK' });
       }
 

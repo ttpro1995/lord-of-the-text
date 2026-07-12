@@ -51,12 +51,12 @@ export default function ResourceDisplay({ resources, buildings, resourceCap }) {
           <div 
             key={resource} 
             className={`resource ${isAnimating ? 'resource-animating' : ''}`}
-            title={`${resource.charAt(0).toUpperCase() + resource.slice(1)}: ${Math.floor(amount)}/${cap}${rate > 0 ? ` (+${rate}/min)` : ''}`}
+            title={`${resource.charAt(0).toUpperCase() + resource.slice(1)}: ${Math.floor(amount)}/${cap}${rate > 0 ? ` (+${rate}/tick)` : ''}`}
           >
             <span className="resource-icon">{resourceIcons[resource] || resource.charAt(0).toUpperCase()}</span>
             <span className="resource-amount">{Math.floor(amount)}</span>
             {rate > 0 && (
-              <span className="resource-rate">{Math.floor(rate)}/min</span>
+              <span className="resource-rate">{Math.floor(rate)}/tick</span>
             )}
             {cap > 200 && (
               <span className="resource-cap">/ {cap}</span>

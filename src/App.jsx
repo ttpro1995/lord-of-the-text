@@ -4,6 +4,7 @@ import { initialState, calculateResourceCap } from './constants/gameState.js';
 import { BASE_UNIT_CAP, UNIT_CAP_PER_BARRACKS_LEVEL } from './constants/unitConstants.js';
 import { gameReducer } from './constants/gameReducer.js';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js';
+import { toTicksFromSeconds } from './utils/timeConversion.js';
 import ResourceDisplay from './components/ResourceDisplay.jsx';
 import BuildingCard from './components/BuildingCard.jsx';
 import UnitTraining from './components/UnitTraining.jsx';
@@ -12,11 +13,34 @@ import TabNavigation from './components/TabNavigation.jsx';
 import gameConstants from './data/game-constants.json';
 
 function App() {
+  // Migration for legacy second-based queue items
+  const migrateState = (loadedState) => {
+    if (!loadedState) return null;
+    
+    // Check if unitQueue has second-based trainingTime values (legacy)
+    // Legacy values are >= 30, tick-native values are <= 2
+    const needsMigration = loadedState.unitQueue && 
+      loadedState.unitQueue.some(item => item.trainingTime >= 30);
+    
+    if (needsMigration) {
+      const migratedState = { ...loadedState };
+      migratedState.unitQueue = loadedState.unitQueue.map(item => ({
+        ...item,
+        trainingTime: toTicksFromSeconds(item.trainingTime),
+        progress: toTicksFromSeconds(item.progress || 0)
+      }));
+      return migratedState;
+    }
+    
+    return loadedState;
+  };
+
   // Try to load saved state from localStorage, or use initialState if none exists
   const savedState = localStorage.getItem('gameState');
   const lastActive = localStorage.getItem('lastActive');
   const loadedState = savedState ? JSON.parse(savedState) : null;
-  const initialGameState = loadedState ? { ...initialState, ...loadedState } : initialState;
+  const migratedState = migrateState(loadedState);
+  const initialGameState = migratedState ? { ...initialState, ...migratedState } : initialState;
   const [state, dispatch] = useReducer(gameReducer, initialGameState);
   const [showSettings, setShowSettings] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -151,7 +175,7 @@ function App() {
           <button className="settings-button" onClick={() => setShowSettings(true)}>⚙️ Settings</button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <button className="tick-button" onClick={handleManualTick} title="Advance turn (Space)">Tick (+1s)</button>
+          <button className="tick-button" onClick={handleManualTick} title="Advance turn (Space)">Tick (+1)</button>
           <ResourceDisplay resources={state.resources} buildings={state.buildings} resourceCap={calculateResourceCap} />
         </div>
       </header>
