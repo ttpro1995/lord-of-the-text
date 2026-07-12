@@ -45,6 +45,12 @@ function App() {
   }, [state.resources, state.units.length, state.unitQueue.length, unitCap]);
 
   // Keyboard shortcuts
+  const handleManualTick = () => {
+    dispatch({ type: 'TICK' });
+    localStorage.setItem('gameState', JSON.stringify(stateRef.current));
+    localStorage.setItem('lastActive', Date.now().toString());
+  };
+
   const handleTrainMax = () => {
     if (maxAffordable > 0) {
       dispatch({ type: 'TRAIN_UNITS_BATCH', payload: { unitType: 'Peasant-Spear', quantity: maxAffordable } });
@@ -55,6 +61,7 @@ function App() {
     'b': () => setActiveTab('kingdom'),
     'u': () => setActiveTab('army'),
     'm': handleTrainMax,
+    ' ': handleManualTick,
     'escape': () => { setShowSettings(false); setShowResetConfirm(false); },
   });
 
@@ -67,16 +74,6 @@ function App() {
     }
     localStorage.setItem('lastActive', Date.now().toString());
   }, [lastActive]);
-
-  // Game tick and autosave
-  useEffect(() => {
-    const interval = setInterval(() => {
-      dispatch({ type: 'TICK' });
-      localStorage.setItem('gameState', JSON.stringify(stateRef.current));
-      localStorage.setItem('lastActive', Date.now().toString());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Notification auto-dismiss
   useEffect(() => {
@@ -153,7 +150,10 @@ function App() {
           <h1>Lord of the Text – {state.version}</h1>
           <button className="settings-button" onClick={() => setShowSettings(true)}>⚙️ Settings</button>
         </div>
-        <ResourceDisplay resources={state.resources} buildings={state.buildings} resourceCap={calculateResourceCap} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button className="tick-button" onClick={handleManualTick} title="Advance turn (Space)">Tick (+1s)</button>
+          <ResourceDisplay resources={state.resources} buildings={state.buildings} resourceCap={calculateResourceCap} />
+        </div>
       </header>
 
       <main className="game-content">
@@ -214,7 +214,7 @@ function App() {
             <h2>Settings</h2>
             <p>Game Version: {state.version}</p>
             <p>Resources saved automatically. Manual Save: 'S' key, Load: 'L' key</p>
-            <p>Keyboard shortcuts: B=Kingdom, U=Army, M=Train Max</p>
+            <p>Keyboard shortcuts: B=Kingdom, U=Army, M=Train Max, Space=Tick</p>
             <div className="danger-zone">
               <h3><span className="warning-icon">⚠️</span> Danger Zone</h3>
               <button className="danger-button" onClick={() => setShowResetConfirm(true)}>🗑️ Hard Reset</button>
