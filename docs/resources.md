@@ -23,7 +23,7 @@ Lord of the Text features seven primary resources that players must manage to pr
 
 ## Production Rates
 
-Production rates increase with building levels and applied buffs. Base production rates (per tick) include:
+Production rates increase with building levels and applied buffs. Base production rates (per minute) include:
 
 - **Timber**: 5 per Lumber Camp at Level 1 (scales up)
 - **Stone**: 4 per Quarry at Level 1
@@ -32,8 +32,6 @@ Production rates increase with building levels and applied buffs. Base productio
 - **Gold**: 2 per Gold Mine at Level 1
 - **Knowledge**: 1 per Library at Level 1
 - **Faith**: 1 per Temple at Level 1
-
-> Note: Production rates are displayed in the UI as "/tick" and update in real-time.
 
 ### Upgrade Scaling
 

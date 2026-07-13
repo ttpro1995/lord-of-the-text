@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { gameReducer } from '../src/constants/gameReducer.js';
-import { initialState } from '../src/constants/gameState.js';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { gameReducer, initialState } from '../src/App';
+import buildingDefinitions from '../data/building-definitions.json';
 
 describe('Milestone 2 - Growing Estate (v0.3)', () => {
   let state;
@@ -196,14 +196,14 @@ describe('Milestone 2 - Growing Estate (v0.3)', () => {
         payload: { unitType: 'Peasant-Spear' }
       });
 
-      // Simulate training time (1 tick)
-      for (let i = 0; i < 1; i++) {
+      // Simulate training time (30 ticks)
+      for (let i = 0; i < 30; i++) {
         state = gameReducer(state, { type: 'TICK' });
       }
 
       // Check notification
       expect(state.notifications.length).toBeGreaterThan(0);
-      expect(state.notifications[0].message).toContain('Unit ready');
+      expect(state.notifications[0]).toContain('Unit ready');
     });
 
     it('should show building complete notification when building new structure', () => {
@@ -216,7 +216,7 @@ describe('Milestone 2 - Growing Estate (v0.3)', () => {
 
       // Check notification
       expect(newState.notifications.length).toBe(1);
-      expect(newState.notifications[0].message).toBe('Farm complete');
+      expect(newState.notifications[0]).toBe('Farm complete');
       expect(newState.buildings['Farm']).toBe(1);
       expect(newState.resources.timber).toBe(60); // 100 - 40 = 60
       expect(newState.resources.stone).toBe(30); // 50 - 20 = 30
@@ -234,7 +234,7 @@ describe('Milestone 2 - Growing Estate (v0.3)', () => {
 
       // Check notification
       expect(newState.notifications.length).toBe(1);
-      expect(newState.notifications[0].message).toBe('Farm complete');
+      expect(newState.notifications[0]).toBe('Farm complete');
       expect(newState.buildings['Farm']).toBe(2);
       expect(newState.resources.timber).toBe(20); // 100 - 80 = 20
       expect(newState.resources.stone).toBe(10); // 50 - 40 = 10
