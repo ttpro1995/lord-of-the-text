@@ -79,6 +79,41 @@
   background-color: #45a049;
 }
 
+/* Blocker Messages */
+.blocker-messages {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: rgba(255, 193, 7, 0.1);
+  border-left: 3px solid #ffc107;
+  border-radius: 4px;
+}
+
+.blocker-message {
+  font-size: 0.85rem;
+  color: #ffc107;
+  margin-bottom: 0.25rem;
+}
+
+.blocker-message.missing_dependency {
+  color: #ffc107;
+}
+
+.blocker-message.missing_resource {
+  color: #ff9800;
+}
+
+.blocker-message.cap_reached {
+  color: #f44336;
+}
+
+.training-blockers {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: rgba(255, 193, 7, 0.1);
+  border-left: 3px solid #ffc107;
+  border-radius: 4px;
+}
+
 /* Settings Button */
 .settings-button {
   background-color: #7f8c8d;
